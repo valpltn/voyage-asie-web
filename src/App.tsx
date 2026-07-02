@@ -68,17 +68,16 @@ export function App() {
           <h1>{activeTrip.title}</h1>
           <p className="subtitle">{activeTrip.description}</p>
         </div>
-        <div className="trip-switcher" aria-label="Selection du voyage">
-          <TripSwitcher
-            folders={travelFolders}
-            activeFolderId={activeFolder.id}
-            activeTripId={activeTrip.id}
-            onFolderChange={handleFolderChange}
-            onTripChange={handleTripChange}
-          />
-          <TripStats stats={activeTrip.stats} />
-        </div>
+        <TripStats stats={activeTrip.stats} />
       </header>
+
+      <TripSwitcher
+        folders={travelFolders}
+        activeFolderId={activeFolder.id}
+        activeTripId={activeTrip.id}
+        onFolderChange={handleFolderChange}
+        onTripChange={handleTripChange}
+      />
 
       <nav className="tabs" aria-label="Vues du voyage">
         {tabs.map((tab) => (
