@@ -39,6 +39,10 @@ select {
   font: inherit;
 }
 
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 a {
   color: var(--accent);
   font-weight: 800;
@@ -231,7 +235,8 @@ h1 {
 
 .destination-card:hover,
 .destination-card:has(.destination-photo:hover),
-.destination-card:focus-visible {
+.destination-card:focus-visible,
+.destination-card.active {
   --card-width: var(--card-expanded-width);
   transform: translateY(-5px);
 }
@@ -261,7 +266,8 @@ h1 {
 
 .destination-card:hover .destination-photo,
 .destination-card:has(.destination-photo:hover) .destination-photo,
-.destination-card:focus-visible .destination-photo {
+.destination-card:focus-visible .destination-photo,
+.destination-card.active .destination-photo {
   box-shadow: 0 16px 34px rgba(29, 63, 48, 0.18);
   filter: saturate(1.08) contrast(1.02);
 }
@@ -280,7 +286,9 @@ h1 {
   transform: translateY(-2px);
 }
 
-.destination-card:hover .destination-content span {
+.destination-card:hover .destination-content span,
+.destination-card.active .destination-content span,
+.destination-card:focus-visible .destination-content span {
   opacity: 1;
   transform: translateY(0);
 }
@@ -923,9 +931,32 @@ h1 {
 }
 
 @media (max-width: 700px) {
+  body {
+    background:
+      radial-gradient(circle at 12% 0%, rgba(131, 170, 79, 0.18), transparent 18rem),
+      linear-gradient(160deg, #f7faef 0%, #eef7f0 56%, #f8f5e8 100%);
+  }
+
   .shell {
-    width: min(100vw - 20px, 560px);
-    padding-top: 14px;
+    width: 100%;
+    padding: 12px 10px 22px;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    gap: 14px;
+    padding: 6px 0 14px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 13vw, 3.15rem);
+    line-height: 0.98;
+  }
+
+  .subtitle {
+    font-size: 0.94rem;
+    line-height: 1.55;
+    margin-top: 10px;
   }
 
   .stats,
@@ -938,41 +969,106 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .stats {
+    gap: 8px;
+  }
+
+  .stat {
+    align-items: center;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding: 11px 12px;
+  }
+
+  .stat strong {
+    font-size: 1.05rem;
+  }
+
+  .stat span {
+    margin-top: 0;
+  }
+
   .picker-heading {
-    justify-items: start;
+    justify-items: stretch;
   }
 
   .destination-picker {
+    margin: 0 -10px 14px;
     padding-inline: 10px;
   }
 
+  .folder-tabs,
   .destination-grid {
-    gap: 5px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+
+  .folder-tabs::-webkit-scrollbar,
+  .destination-grid::-webkit-scrollbar,
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .folder-tab {
+    flex: 0 0 auto;
+    min-height: 48px;
+    min-width: min(72vw, 240px);
+    padding: 10px 14px;
+    text-align: center;
   }
 
   .destination-card {
-    --card-collapsed-width: min(34vw, 130px);
-    --card-expanded-width: min(58vw, 205px);
+    --card-collapsed-width: min(46vw, 160px);
+    --card-expanded-width: min(78vw, 285px);
+    gap: 7px;
   }
 
   .destination-photo {
-    height: clamp(180px, 52vw, 240px);
+    height: clamp(170px, 58vw, 240px);
+  }
+
+  .destination-content {
+    padding-inline: 2px;
+  }
+
+  .destination-content strong {
+    font-size: 1.05rem;
+  }
+
+  .destination-card .destination-content span {
+    opacity: 1;
+    transform: none;
   }
 
   .tabs {
+    background: rgba(242, 247, 239, 0.92);
+    backdrop-filter: blur(10px);
     overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: 4px;
+    margin-inline: -10px;
+    padding: 0 10px 8px;
+    position: sticky;
+    top: 0;
+    z-index: 700;
   }
 
   .tab {
+    flex: 0 0 auto;
+    min-height: 42px;
     white-space: nowrap;
+  }
+
+  .map-layout {
+    gap: 12px;
   }
 
   .map-card,
   #map {
-    height: 430px;
-    min-height: 430px;
+    height: min(68vh, 430px);
+    min-height: 340px;
   }
 
   .map-actions {
@@ -992,6 +1088,82 @@ h1 {
   }
 
   .detail-card {
+    height: auto;
+    max-height: none;
     min-height: 0;
+    padding: 14px;
+  }
+
+  .detail-card h2 {
+    font-size: 1.28rem;
+  }
+
+  .route-list {
+    max-height: 360px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .timeline-card,
+  .checklist-card,
+  .document-card,
+  .empty-state,
+  .expense-summary article,
+  .expense-card {
+    padding: 14px;
+  }
+
+  .expense-summary strong {
+    font-size: 1.35rem;
+  }
+
+  .expense-row {
+    align-items: start;
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 430px) {
+  .shell {
+    padding-inline: 8px;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+  }
+
+  h1 {
+    font-size: clamp(1.85rem, 12vw, 2.65rem);
+  }
+
+  .destination-picker,
+  .tabs {
+    margin-inline: -8px;
+  }
+
+  .destination-picker {
+    padding-inline: 8px;
+  }
+
+  .tabs {
+    padding-inline: 8px;
+  }
+
+  .destination-card {
+    --card-collapsed-width: min(52vw, 155px);
+    --card-expanded-width: min(84vw, 270px);
+  }
+
+  .map-actions {
+    gap: 6px;
+  }
+
+  .action-btn {
+    padding: 9px 10px;
+  }
+
+  .leaflet-control-attribution {
+    max-width: 75vw;
   }
 }

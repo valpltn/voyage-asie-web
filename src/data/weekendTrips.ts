@@ -15,6 +15,10 @@ interface WeekendSeed {
   notes?: string;
 }
 
+interface WeekendActivity extends ActivitySuggestion {
+  coordinates: [number, number];
+}
+
 const weekendSeeds: WeekendSeed[] = [
   {
     country: "Coree du Sud",
@@ -185,29 +189,29 @@ const weekendActivities: Record<string, ActivitySuggestion[]> = {
     { title: "Temple Street ou dim sum", description: "Soiree marche, street food ou adresse dim sum.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html", coordinates: [22.3069, 114.1692] },
   ],
   Shanghai: [
-    { title: "The Bund et Huangpu", description: "Promenade classique au bord du fleuve, ideale au coucher du soleil.", sourceLabel: "Expedia Shanghai", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Shanghai.d180026.Travel-Guide-Activities" },
-    { title: "Former French Concession", description: "Balade plus calme entre cafes, rues arborees et petites boutiques.", sourceLabel: "Condé Nast Traveler", sourceUrl: "https://www.cntraveler.com/stories/2014-12-18/things-to-do-in-shanghai-weekend-guide" },
-    { title: "Tianzifang ou art district", description: "Option compacte pour shopping, cafes et galeries.", sourceLabel: "Condé Nast Traveler", sourceUrl: "https://www.cntraveler.com/stories/2014-12-18/things-to-do-in-shanghai-weekend-guide" },
+    { title: "The Bund et Huangpu", description: "Promenade classique au bord du fleuve, ideale au coucher du soleil.", sourceLabel: "Expedia Shanghai", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Shanghai.d180026.Travel-Guide-Activities", coordinates: [31.2397, 121.4998] },
+    { title: "Former French Concession", description: "Balade plus calme entre cafes, rues arborees et petites boutiques.", sourceLabel: "Conde Nast Traveler", sourceUrl: "https://www.cntraveler.com/stories/2014-12-18/things-to-do-in-shanghai-weekend-guide", coordinates: [31.2152, 121.4581] },
+    { title: "Tianzifang ou art district", description: "Option compacte pour shopping, cafes et galeries.", sourceLabel: "Conde Nast Traveler", sourceUrl: "https://www.cntraveler.com/stories/2014-12-18/things-to-do-in-shanghai-weekend-guide", coordinates: [31.2106, 121.4692] },
   ],
   Jakarta: [
-    { title: "Monas et Merdeka Square", description: "Point de repere central, facile a combiner avec les monuments voisins.", sourceLabel: "Travel Lush", sourceUrl: "https://travel-lush.com/9-things-to-do-jakarta/" },
-    { title: "Kota Tua et Sunda Kelapa", description: "Vieille ville, port historique et photos urbaines.", sourceLabel: "Travel Lush", sourceUrl: "https://travel-lush.com/9-things-to-do-jakarta/" },
-    { title: "Street food night tour", description: "Bon format weekend pour voir plusieurs quartiers sans trop planifier.", sourceLabel: "Travel Lush", sourceUrl: "https://travel-lush.com/9-things-to-do-jakarta/" },
+    { title: "Monas et Merdeka Square", description: "Point de repere central, facile a combiner avec les monuments voisins.", sourceLabel: "Travel Lush", sourceUrl: "https://travel-lush.com/9-things-to-do-jakarta/", coordinates: [-6.1754, 106.8272] },
+    { title: "Kota Tua et Sunda Kelapa", description: "Vieille ville, port historique et photos urbaines.", sourceLabel: "Travel Lush", sourceUrl: "https://travel-lush.com/9-things-to-do-jakarta/", coordinates: [-6.1352, 106.8133] },
+    { title: "Street food night tour", description: "Bon format weekend pour voir plusieurs quartiers sans trop planifier.", sourceLabel: "Travel Lush", sourceUrl: "https://travel-lush.com/9-things-to-do-jakarta/", coordinates: [-6.1267, 106.8086] },
   ],
   Kinmen: [
-    { title: "Juguang Tower et patrimoine militaire", description: "Introduction rapide a l'histoire particuliere de Kinmen.", sourceLabel: "Kinmen Travel", sourceUrl: "https://kinmen.travel/en/discover/travel-guide" },
-    { title: "Zhaishan Tunnel", description: "Site militaire souterrain, tres adapte a un court sejour.", sourceLabel: "Taiwan Tourism", sourceUrl: "https://eng.taiwan.net.tw/m1.aspx?sno=0043590" },
-    { title: "Little Kinmen en ferry", description: "Excursion courte possible grace au trajet d'environ 10 minutes.", sourceLabel: "Kinmen Travel", sourceUrl: "https://kinmen.travel/en/discover/travel-guide" },
+    { title: "Juguang Tower et patrimoine militaire", description: "Introduction rapide a l'histoire particuliere de Kinmen.", sourceLabel: "Kinmen Travel", sourceUrl: "https://kinmen.travel/en/discover/travel-guide", coordinates: [24.4304, 118.3176] },
+    { title: "Zhaishan Tunnel", description: "Site militaire souterrain, tres adapte a un court sejour.", sourceLabel: "Taiwan Tourism", sourceUrl: "https://eng.taiwan.net.tw/m1.aspx?sno=0043590", coordinates: [24.4094, 118.3097] },
+    { title: "Little Kinmen en ferry", description: "Excursion courte possible grace au trajet d'environ 10 minutes.", sourceLabel: "Kinmen Travel", sourceUrl: "https://kinmen.travel/en/discover/travel-guide", coordinates: [24.4273, 118.2469] },
   ],
   Okinawa: [
-    { title: "Kokusai-dori a Naha", description: "Base simple pour shopping, repas et premiere soiree.", sourceLabel: "Visit Okinawa Japan", sourceUrl: "https://visitokinawajapan.com/" },
-    { title: "Shuri / patrimoine ryukyu", description: "Patrimoine culturel a combiner avec Naha si le weekend est court.", sourceLabel: "Visit Okinawa Japan", sourceUrl: "https://visitokinawajapan.com/" },
-    { title: "Aquarium ou plage", description: "Option journee selon transport: Churaumi Aquarium, Manza Beach ou cote ouest.", sourceLabel: "Expedia Okinawa", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Okinawa-Island.d10805.Travel-Guide-Activities" },
+    { title: "Kokusai-dori a Naha", description: "Base simple pour shopping, repas et premiere soiree.", sourceLabel: "Visit Okinawa Japan", sourceUrl: "https://visitokinawajapan.com/", coordinates: [26.2147, 127.6841] },
+    { title: "Shuri / patrimoine ryukyu", description: "Patrimoine culturel a combiner avec Naha si le weekend est court.", sourceLabel: "Visit Okinawa Japan", sourceUrl: "https://visitokinawajapan.com/", coordinates: [26.217, 127.7193] },
+    { title: "Aquarium ou plage", description: "Option journee selon transport: Churaumi Aquarium, Manza Beach ou cote ouest.", sourceLabel: "Expedia Okinawa", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Okinawa-Island.d10805.Travel-Guide-Activities", coordinates: [26.6942, 127.878] },
   ],
   Osaka: [
-    { title: "Dotonbori et Minami", description: "Neons, street food et coeur le plus efficace pour une soiree.", sourceLabel: "Japan Travel Osaka", sourceUrl: "https://www.japan.travel/en/destinations/kansai/osaka/" },
-    { title: "Osaka Castle Park", description: "Classique historique et parc facile a integrer dans une demi-journee.", sourceLabel: "Japan Travel Osaka", sourceUrl: "https://www.japan.travel/en/destinations/kansai/osaka/" },
-    { title: "Tenma ou Ura Namba", description: "Quartiers food pour profiter du cote cuisine d'Osaka.", sourceLabel: "Japan Travel Osaka", sourceUrl: "https://www.japan.travel/en/destinations/kansai/osaka/" },
+    { title: "Dotonbori et Minami", description: "Neons, street food et coeur le plus efficace pour une soiree.", sourceLabel: "Japan Travel Osaka", sourceUrl: "https://www.japan.travel/en/destinations/kansai/osaka/", coordinates: [34.6687, 135.501] },
+    { title: "Osaka Castle Park", description: "Classique historique et parc facile a integrer dans une demi-journee.", sourceLabel: "Japan Travel Osaka", sourceUrl: "https://www.japan.travel/en/destinations/kansai/osaka/", coordinates: [34.6873, 135.5262] },
+    { title: "Tenma ou Ura Namba", description: "Quartiers food pour profiter du cote cuisine d'Osaka.", sourceLabel: "Japan Travel Osaka", sourceUrl: "https://www.japan.travel/en/destinations/kansai/osaka/", coordinates: [34.7047, 135.5123] },
   ],
 };
 
@@ -229,6 +233,56 @@ function estimateTotalBudget(seed: WeekendSeed) {
   return values.reduce((sum, value) => sum + value, 0);
 }
 
+function createWeekendSteps(seed: WeekendSeed): Trip["steps"] {
+  const activities = (weekendActivities[seed.city] ?? []).filter(
+    (activity): activity is WeekendActivity => Array.isArray(activity.coordinates),
+  );
+  const citySlug = slugify(seed.city);
+  const cityCenterStep: Trip["steps"][number] = {
+    id: citySlug,
+    label: `${seed.city} centre`,
+    shortLabel: seed.city,
+    region: seed.country,
+    country: seed.country,
+    color: travelColors.weekend,
+    coordinates: seed.coordinates,
+    startDate: seed.startDate,
+    endDate: seed.endDate,
+    nights: "2 nuits",
+    transport: `Vol ou trajet depuis ${seed.departureAirport}. Budget vol indicatif: ${seed.flightBudget}.`,
+    highlights: [
+      `Logement: ${seed.lodgingBudget}`,
+      `Budget / j: ${seed.dailyBudget}`,
+      `Activites: ${seed.activityBudget}`,
+    ],
+    dailyPlan: [
+      { date: "Jour 1", summary: `Arrivee depuis ${seed.departureAirport}, installation et premiere balade a ${seed.city}.` },
+      { date: "Jour 2", summary: `Journee complete centree sur ${seed.city}: quartiers, activites et repas locaux.` },
+      { date: "Jour 3", summary: `Derniere visite courte puis retour depuis ${seed.city}.` },
+    ],
+    activities,
+  };
+
+  const activitySteps: Trip["steps"] = activities.map((activity, index) => ({
+    id: `${citySlug}-${slugify(activity.title)}`,
+    label: activity.title,
+    shortLabel: `Lieu ${index + 1}`,
+    region: seed.country,
+    country: seed.country,
+    color: travelColors.weekendPlace,
+    coordinates: activity.coordinates,
+    startDate: seed.startDate,
+    endDate: seed.endDate,
+    nights: "Point a voir",
+    transport: `Sur place pendant le weekend a ${seed.city}.`,
+    highlights: [activity.description, `Source: ${activity.sourceLabel}`],
+    dailyPlan: [{ date: "Weekend", summary: activity.description }],
+    activities: [activity],
+  }));
+
+  return [cityCenterStep, ...activitySteps];
+}
+
 function createWeekendTrip(seed: WeekendSeed): Trip {
   const id = `weekend-${slugify(seed.city)}-2026`;
   const totalBudget = estimateTotalBudget(seed);
@@ -246,32 +300,7 @@ function createWeekendTrip(seed: WeekendSeed): Trip {
       { value: "2", label: "nuits" },
       { value: `${Math.round(totalBudget)} EUR`, label: "budget indicatif" },
     ],
-    steps: [
-      {
-        id: slugify(seed.city),
-        label: `${seed.city} centre`,
-        shortLabel: seed.city,
-        region: seed.country,
-        country: seed.country,
-        color: travelColors.weekend,
-        coordinates: seed.coordinates,
-        startDate: seed.startDate,
-        endDate: seed.endDate,
-        nights: "2 nuits",
-        transport: `Vol ou trajet depuis ${seed.departureAirport}. Budget vol indicatif: ${seed.flightBudget}.`,
-        highlights: [
-          `Logement: ${seed.lodgingBudget}`,
-          `Budget / j: ${seed.dailyBudget}`,
-          `Activites: ${seed.activityBudget}`,
-        ],
-        dailyPlan: [
-          { date: "Jour 1", summary: `Arrivee depuis ${seed.departureAirport}, installation et premiere balade a ${seed.city}.` },
-          { date: "Jour 2", summary: `Journee complete centree sur ${seed.city}: quartiers, activites et repas locaux.` },
-          { date: "Jour 3", summary: `Derniere visite courte puis retour depuis ${seed.city}.` },
-        ],
-        activities: weekendActivities[seed.city] ?? [],
-      },
-    ],
+    steps: createWeekendSteps(seed),
     bookings: [
       {
         id: `${id}-transport`,

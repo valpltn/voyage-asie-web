@@ -9,6 +9,13 @@ describe("travel data validation", () => {
     expect(travelFolders.find((folder) => folder.id === "weekends-depuis-taiwan")?.trips).toHaveLength(11);
   });
 
+  it("keeps weekend trips visible as multiple map steps", () => {
+    const weekendTrips = travelFolders.find((folder) => folder.id === "weekends-depuis-taiwan")?.trips ?? [];
+
+    expect(weekendTrips.every((trip) => trip.steps.length >= 4)).toBe(true);
+    expect(weekendTrips.every((trip) => trip.steps.every((step) => step.coordinates.length === 2))).toBe(true);
+  });
+
   it("rejects invalid coordinates", () => {
     expect(() =>
       validateTravelFolders([

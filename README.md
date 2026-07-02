@@ -19,6 +19,15 @@ npm run build
 npm test
 ```
 
+## Consignes de test
+
+- Ne pas lancer les tests automatiquement apres chaque modification.
+- Les tests sont decides et executes uniquement dans la conversation en cours.
+- Le comportement de test a appliquer est decrit dans `docs/comportement-tests-web.md`.
+- Pour chaque changement, choisir un test proportionne au risque : ni trop lourd pour une modification mineure, ni trop leger pour une modification qui touche un parcours utilisateur, des donnees ou une validation.
+- Apres chaque modification, noter ce qui doit etre teste dans `docs/changements-a-tester.md`.
+- Une fois le test effectue, vider `docs/changements-a-tester.md` et recopier la modification testee dans `docs/archive-changements-testes.md` avec le test realise et le resultat.
+
 ## Structure
 
 - `src/data/` contient les voyages locaux versionnes.

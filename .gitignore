@@ -9,3 +9,5 @@ secrets/
 *.ticket.*
 *.log
 *.tsbuildinfo
+
+.vercel

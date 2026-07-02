@@ -93,7 +93,7 @@ export function TripSwitcher({
             <span className="destination-content">
               <span className="destination-meta">{formatDateRange(trip.startDate, trip.endDate)}</span>
               <strong>{trip.title}</strong>
-              <span>{trip.stats.map((stat) => `${stat.value} ${stat.label}`).join(" · ")}</span>
+              <span>{trip.stats.map((stat) => `${stat.value} ${stat.label}`).join(" - ")}</span>
             </span>
           </button>
         ))}
