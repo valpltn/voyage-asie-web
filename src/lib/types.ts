@@ -19,6 +19,7 @@ export interface ActivitySuggestion {
   description: string;
   sourceLabel: string;
   sourceUrl: string;
+  coordinates?: [number, number];
 }
 
 export interface TripStep {

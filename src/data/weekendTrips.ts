@@ -155,34 +155,34 @@ const weekendSeeds: WeekendSeed[] = [
 
 const weekendActivities: Record<string, ActivitySuggestion[]> = {
   Seoul: [
-    { title: "Palais et quartiers historiques", description: "Gyeongbokgung, Bukchon Hanok Village et balade entre maisons traditionnelles.", sourceLabel: "Visit Seoul", sourceUrl: "https://english.visitseoul.net/attractions" },
-    { title: "Marche et street food", description: "Gwangjang Market pour un format facile en soiree de weekend.", sourceLabel: "Visit Seoul", sourceUrl: "https://english.visitseoul.net/attractions" },
-    { title: "Vue et sortie nocturne", description: "N Seoul Tower, Myeongdong ou Hongdae selon l'energie.", sourceLabel: "Visit Seoul", sourceUrl: "https://english.visitseoul.net/attractions" },
+    { title: "Palais et quartiers historiques", description: "Gyeongbokgung, Bukchon Hanok Village et balade entre maisons traditionnelles.", sourceLabel: "Visit Seoul", sourceUrl: "https://english.visitseoul.net/attractions", coordinates: [37.5796, 126.977] },
+    { title: "Marche et street food", description: "Gwangjang Market pour un format facile en soiree de weekend.", sourceLabel: "Visit Seoul", sourceUrl: "https://english.visitseoul.net/attractions", coordinates: [37.5701, 126.9997] },
+    { title: "Vue et sortie nocturne", description: "N Seoul Tower, Myeongdong ou Hongdae selon l'energie.", sourceLabel: "Visit Seoul", sourceUrl: "https://english.visitseoul.net/attractions", coordinates: [37.5512, 126.9882] },
   ],
   Tokyo: [
-    { title: "Shinjuku et jardins", description: "Shinjuku Gyoen puis soiree autour de Shinjuku.", sourceLabel: "GO TOKYO", sourceUrl: "https://www.gotokyo.org/en/index.html" },
-    { title: "Marches et culture urbaine", description: "Tsukiji Outer Market, Tokyo Station et Ginza en parcours compact.", sourceLabel: "Japan Travel", sourceUrl: "https://www.japan.travel/en/destinations/kanto/tokyo/" },
-    { title: "Sanctuaire et quartiers jeunes", description: "Meiji Shrine, Harajuku et Omotesando pour une demi-journee fluide.", sourceLabel: "GO TOKYO", sourceUrl: "https://www.gotokyo.org/en/index.html" },
+    { title: "Shinjuku et jardins", description: "Shinjuku Gyoen puis soiree autour de Shinjuku.", sourceLabel: "GO TOKYO", sourceUrl: "https://www.gotokyo.org/en/index.html", coordinates: [35.6852, 139.7101] },
+    { title: "Marches et culture urbaine", description: "Tsukiji Outer Market, Tokyo Station et Ginza en parcours compact.", sourceLabel: "Japan Travel", sourceUrl: "https://www.japan.travel/en/destinations/kanto/tokyo/", coordinates: [35.6655, 139.7707] },
+    { title: "Sanctuaire et quartiers jeunes", description: "Meiji Shrine, Harajuku et Omotesando pour une demi-journee fluide.", sourceLabel: "GO TOKYO", sourceUrl: "https://www.gotokyo.org/en/index.html", coordinates: [35.6764, 139.6993] },
   ],
   Hanoi: [
-    { title: "Old Quarter et street food", description: "Balade dans le vieux quartier avec pho, bun cha et cafes.", sourceLabel: "Vietnam Travel", sourceUrl: "https://vietnam.travel/places-to-go/northern-vietnam/ha-noi" },
-    { title: "Hoan Kiem et Ngoc Son", description: "Boucle calme autour du lac, pratique en debut ou fin de journee.", sourceLabel: "Vietnam Travel", sourceUrl: "https://vietnam.travel/places-to-go/northern-vietnam/ha-noi" },
-    { title: "Temple of Literature et spectacle", description: "Patrimoine en journee puis water puppet show le soir.", sourceLabel: "GetYourGuide Hanoi", sourceUrl: "https://www.getyourguide.com/hanoi-l205/ttd/" },
+    { title: "Old Quarter et street food", description: "Balade dans le vieux quartier avec pho, bun cha et cafes.", sourceLabel: "Vietnam Travel", sourceUrl: "https://vietnam.travel/places-to-go/northern-vietnam/ha-noi", coordinates: [21.0359, 105.8501] },
+    { title: "Hoan Kiem et Ngoc Son", description: "Boucle calme autour du lac, pratique en debut ou fin de journee.", sourceLabel: "Vietnam Travel", sourceUrl: "https://vietnam.travel/places-to-go/northern-vietnam/ha-noi", coordinates: [21.0287, 105.8521] },
+    { title: "Temple of Literature et spectacle", description: "Patrimoine en journee puis water puppet show le soir.", sourceLabel: "GetYourGuide Hanoi", sourceUrl: "https://www.getyourguide.com/hanoi-l205/ttd/", coordinates: [21.028, 105.8356] },
   ],
   Singapour: [
-    { title: "Gardens by the Bay", description: "Supertree Grove, Cloud Forest ou Flower Dome selon budget et chaleur.", sourceLabel: "Visit Singapore", sourceUrl: "https://www.visitsingapore.com/" },
-    { title: "Marina Bay a pied", description: "Waterfront, skyline et soiree autour de Marina Bay.", sourceLabel: "Visit Singapore", sourceUrl: "https://www.visitsingapore.com/" },
-    { title: "Quartiers food", description: "Bugis, Chinatown, Little India ou hawker centre pour optimiser un weekend.", sourceLabel: "Visit Singapore", sourceUrl: "https://www.visitsingapore.com/" },
+    { title: "Gardens by the Bay", description: "Supertree Grove, Cloud Forest ou Flower Dome selon budget et chaleur.", sourceLabel: "Visit Singapore", sourceUrl: "https://www.visitsingapore.com/", coordinates: [1.2816, 103.8636] },
+    { title: "Marina Bay a pied", description: "Waterfront, skyline et soiree autour de Marina Bay.", sourceLabel: "Visit Singapore", sourceUrl: "https://www.visitsingapore.com/", coordinates: [1.2847, 103.861] },
+    { title: "Quartiers food", description: "Bugis, Chinatown, Little India ou hawker centre pour optimiser un weekend.", sourceLabel: "Visit Singapore", sourceUrl: "https://www.visitsingapore.com/", coordinates: [1.2836, 103.8435] },
   ],
   Manille: [
-    { title: "Intramuros et Fort Santiago", description: "Coeur historique compact, ideal pour une premiere demi-journee.", sourceLabel: "Tripadvisor Manila", sourceUrl: "https://www.tripadvisor.com/Attractions-g298573-Activities-Manila_Metro_Manila_Luzon.html" },
-    { title: "Rizal Park et musees", description: "Parcours patrimonial simple autour du centre de Manille.", sourceLabel: "Tripadvisor Manila", sourceUrl: "https://www.tripadvisor.com/Attractions-g298573-Activities-Manila_Metro_Manila_Luzon.html" },
-    { title: "Makati ou Binondo", description: "Soiree food, marche ou quartier plus vivant selon logement.", sourceLabel: "Expedia Manila", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Manila.d178282.Travel-Guide-Activities" },
+    { title: "Intramuros et Fort Santiago", description: "Coeur historique compact, ideal pour une premiere demi-journee.", sourceLabel: "Tripadvisor Manila", sourceUrl: "https://www.tripadvisor.com/Attractions-g298573-Activities-Manila_Metro_Manila_Luzon.html", coordinates: [14.5955, 120.9708] },
+    { title: "Rizal Park et musees", description: "Parcours patrimonial simple autour du centre de Manille.", sourceLabel: "Tripadvisor Manila", sourceUrl: "https://www.tripadvisor.com/Attractions-g298573-Activities-Manila_Metro_Manila_Luzon.html", coordinates: [14.5826, 120.9787] },
+    { title: "Makati ou Binondo", description: "Soiree food, marche ou quartier plus vivant selon logement.", sourceLabel: "Expedia Manila", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Manila.d178282.Travel-Guide-Activities", coordinates: [14.6007, 120.9745] },
   ],
   "Hong Kong": [
-    { title: "Victoria Peak", description: "Vue skyline, a placer si la meteo est degagee.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html" },
-    { title: "Star Ferry et Victoria Harbour", description: "Trajet iconique et promenade Tsim Sha Tsui en soiree.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html" },
-    { title: "Temple Street ou dim sum", description: "Soiree marche, street food ou adresse dim sum.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html" },
+    { title: "Victoria Peak", description: "Vue skyline, a placer si la meteo est degagee.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html", coordinates: [22.2759, 114.1455] },
+    { title: "Star Ferry et Victoria Harbour", description: "Trajet iconique et promenade Tsim Sha Tsui en soiree.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html", coordinates: [22.2938, 114.1691] },
+    { title: "Temple Street ou dim sum", description: "Soiree marche, street food ou adresse dim sum.", sourceLabel: "Discover Hong Kong", sourceUrl: "https://www.discoverhongkong.com/eng/index.html", coordinates: [22.3069, 114.1692] },
   ],
   Shanghai: [
     { title: "The Bund et Huangpu", description: "Promenade classique au bord du fleuve, ideale au coucher du soleil.", sourceLabel: "Expedia Shanghai", sourceUrl: "https://www.expedia.com/Things-To-Do-In-Shanghai.d180026.Travel-Guide-Activities" },

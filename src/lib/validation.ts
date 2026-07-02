@@ -19,6 +19,7 @@ const activitySuggestionSchema = z.object({
   description: z.string().min(1),
   sourceLabel: z.string().min(1),
   sourceUrl: z.string().url(),
+  coordinates: z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]).optional(),
 });
 
 const tripStepSchema = z.object({
