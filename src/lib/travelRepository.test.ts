@@ -96,4 +96,28 @@ describe("public travel data sanitization", () => {
 
     expect(expenses.find((expense) => expense.id === "voyage-chine-vol-aller-canton")).toBeUndefined();
   });
+
+  it("hides bundled trips when a remote soft-delete exists", () => {
+    const folders = mergeFoldersWithLocal(
+      [
+        {
+          id: "weekends-depuis-taiwan",
+          label: "Weekends depuis Taiwan",
+          trips: [
+            {
+              ...trip,
+              id: "weekend-seoul-2026",
+              folderId: "weekends-depuis-taiwan",
+              deletedAt: "2026-07-06T10:00:00.000Z",
+            },
+          ],
+        },
+      ],
+      true,
+    );
+
+    const weekendFolder = folders.find((folder) => folder.id === "weekends-depuis-taiwan");
+
+    expect(weekendFolder?.trips.find((item) => item.id === "weekend-seoul-2026")).toBeUndefined();
+  });
 });

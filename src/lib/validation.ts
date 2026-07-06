@@ -73,6 +73,7 @@ const tripSchema = z.object({
   bookings: z.array(bookingTaskSchema),
   documents: z.array(documentLinkSchema),
   notes: z.string().optional(),
+  deletedAt: z.string().optional(),
 });
 
 export const travelFolderSchema = z.object({

@@ -22,6 +22,7 @@ import {
   saveExpenseList,
   saveFolder,
   saveTrip,
+  saveTripList,
   signOut,
 } from "./lib/travelRepository";
 import type { ExpenseItem, TravelFolder, Trip, TripStep } from "./lib/types";
@@ -163,8 +164,23 @@ export function App() {
     await refreshTravelData(true);
   }
 
+  async function handleSaveFolderTrips(folderId: string, nextTrips: Trip[]) {
+    if (!user || !isAdmin) throw new Error("Mode admin requis.");
+    const folder = travelFolders.find((item) => item.id === folderId);
+    if (!folder) throw new Error("Le dossier est introuvable.");
+    await saveFolder(folder, user.id);
+    await saveTripList(folder.trips, nextTrips, user.id);
+    await refreshTravelData(true);
+  }
+
   async function handleSaveExpenses(nextExpenses: ExpenseItem[]) {
     if (!user || !isAdmin) throw new Error("Mode admin requis.");
+    const tripIds = new Set(nextExpenses.map((expense) => expense.tripId).filter(Boolean));
+    const foldersToSave = travelFolders.filter((folder) => folder.trips.some((trip) => tripIds.has(trip.id)));
+    for (const folder of foldersToSave) {
+      await saveFolder(folder, user.id);
+      await Promise.all(folder.trips.filter((trip) => tripIds.has(trip.id)).map((trip) => saveTrip(trip, user.id, true)));
+    }
     await saveExpenseList(expenseItems, nextExpenses, user.id);
     await refreshTravelData(true);
   }
@@ -207,6 +223,7 @@ export function App() {
           folders={travelFolders}
           onClose={() => setEditTarget(null)}
           onSaveExpenses={handleSaveExpenses}
+          onSaveFolderTrips={handleSaveFolderTrips}
           onSaveTrip={handleSaveTrip}
           target={editTarget}
           trip={activeTrip}
@@ -218,6 +235,7 @@ export function App() {
         activeFolderId={activeFolder.id}
         activeTripId={activeTrip.id}
         onFolderChange={handleFolderChange}
+        onManageTrips={isAdmin ? () => setEditTarget({ type: "folderTrips", folderId: activeFolder.id }) : undefined}
         onTripChange={handleTripChange}
       />
 

@@ -73,6 +73,7 @@ export interface Trip {
   bookings: BookingTask[];
   documents: DocumentLink[];
   notes?: string;
+  deletedAt?: string;
 }
 
 export interface TravelFolder {

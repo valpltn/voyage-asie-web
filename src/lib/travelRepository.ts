@@ -27,6 +27,7 @@ interface TripRow {
   notes?: string | null;
   is_public: boolean;
   sort_order: number;
+  deleted_at?: string | null;
 }
 
 interface ExpenseRow {
@@ -77,6 +78,7 @@ function rowToTrip(row: TripRow, includePrivate: boolean): Trip {
     bookings: row.bookings ?? [],
     documents: row.documents ?? [],
     notes: row.notes ?? undefined,
+    deletedAt: row.deleted_at ?? undefined,
   };
 
   return includePrivate ? trip : sanitizeTripForPublic(trip);
@@ -132,11 +134,16 @@ function localData(includePrivate = true): TravelDataResult {
 
 export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePrivate: boolean) {
   const folders = new Map<string, TravelFolder>();
+  const deletedTripIds = new Set(
+    remoteFolders.flatMap((folder) => folder.trips.filter((trip) => trip.deletedAt).map((trip) => trip.id)),
+  );
 
   for (const localFolder of localTravelFolders) {
     folders.set(localFolder.id, {
       ...localFolder,
-      trips: localFolder.trips.map((trip) => (includePrivate ? trip : sanitizeTripForPublic(trip))),
+      trips: localFolder.trips
+        .filter((trip) => !deletedTripIds.has(trip.id))
+        .map((trip) => (includePrivate ? trip : sanitizeTripForPublic(trip))),
     });
   }
 
@@ -149,6 +156,10 @@ export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePriv
 
     const trips = new Map(existingFolder.trips.map((trip) => [trip.id, trip]));
     for (const remoteTrip of remoteFolder.trips) {
+      if (remoteTrip.deletedAt) {
+        trips.delete(remoteTrip.id);
+        continue;
+      }
       trips.set(remoteTrip.id, remoteTrip);
     }
 
@@ -179,6 +190,25 @@ function isMissingDeletedAtError(error: unknown) {
   const candidate = error as { code?: string; message?: string };
   const message = candidate.message?.toLowerCase() ?? "";
   return candidate.code === "PGRST204" || (message.includes("deleted_at") && message.includes("schema"));
+}
+
+async function loadTripRows(includePrivate: boolean) {
+  if (!supabase) return [];
+  const query = supabase
+    .from("trips")
+    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order,deleted_at")
+    .order("sort_order", { ascending: true });
+  const result = await (includePrivate ? query : query.eq("is_public", true));
+  if (!result.error) return result.data ?? [];
+  if (!isMissingDeletedAtError(result.error)) throw result.error;
+
+  const fallbackQuery = supabase
+    .from("trips")
+    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
+    .order("sort_order", { ascending: true });
+  const fallbackResult = await (includePrivate ? fallbackQuery : fallbackQuery.eq("is_public", true));
+  if (fallbackResult.error) throw fallbackResult.error;
+  return fallbackResult.data ?? [];
 }
 
 async function loadExpenseRows() {
@@ -258,14 +288,9 @@ async function loadRemoteFolders(includePrivate: boolean) {
     .select("id,label,sort_order,is_public")
     .order("sort_order", { ascending: true });
 
-  const tripQuery = supabase
-    .from("trips")
-    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
-    .order("sort_order", { ascending: true });
-
   const [foldersResult, tripsResult] = await Promise.all([
     includePrivate ? folderQuery : folderQuery.eq("is_public", true),
-    includePrivate ? tripQuery : tripQuery.eq("is_public", true),
+    loadTripRows(includePrivate).then((data) => ({ data, error: null })),
   ]);
 
   if (foldersResult.error || tripsResult.error) return [];
@@ -290,8 +315,38 @@ async function loadRemoteFolders(includePrivate: boolean) {
 export async function saveTrip(trip: Trip, ownerId: string, isPublic = true) {
   if (!supabase) throw new Error("Supabase n'est pas configure.");
   validateTravelFolders([{ id: trip.folderId, label: "Validation", trips: [trip] }]);
-  const { error } = await supabase.from("trips").upsert(tripToRow(trip, ownerId, isPublic), { onConflict: "id" });
-  if (error) throw error;
+  const { error } = await supabase.from("trips").upsert({ ...tripToRow(trip, ownerId, isPublic), deleted_at: null }, { onConflict: "id" });
+  if (!error) return;
+  if (!isMissingDeletedAtError(error)) throw error;
+  const fallbackResult = await supabase.from("trips").upsert(tripToRow(trip, ownerId, isPublic), { onConflict: "id" });
+  if (fallbackResult.error) throw fallbackResult.error;
+}
+
+export async function deleteTrip(trip: Trip, ownerId: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configure.");
+  const { error } = await supabase.from("trips").upsert(
+    { ...tripToRow(trip, ownerId, true), deleted_at: new Date().toISOString() },
+    { onConflict: "id" },
+  );
+  if (!error) return;
+  if (!isMissingDeletedAtError(error)) throw error;
+  if (localTravelFolders.some((folder) => folder.trips.some((localTrip) => localTrip.id === trip.id))) {
+    throw new Error("Migration Supabase requise: ajoute la colonne trips.deleted_at pour supprimer un voyage local.");
+  }
+  const fallbackResult = await supabase.from("trips").delete().eq("id", trip.id);
+  if (fallbackResult.error) throw fallbackResult.error;
+}
+
+export async function saveTripList(previousTrips: Trip[], nextTrips: Trip[], ownerId: string) {
+  const nextIds = new Set(nextTrips.map((trip) => trip.id));
+  const removedTrips = previousTrips.filter((trip) => !nextIds.has(trip.id));
+  await Promise.all([
+    ...nextTrips.map((trip, index) => saveTrip(trip, ownerId, true).then(async () => {
+      if (!supabase) return;
+      await supabase.from("trips").update({ sort_order: index }).eq("id", trip.id);
+    })),
+    ...removedTrips.map((trip) => deleteTrip(trip, ownerId)),
+  ]);
 }
 
 export async function saveFolder(folder: TravelFolder, ownerId: string) {

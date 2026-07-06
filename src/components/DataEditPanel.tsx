@@ -4,6 +4,7 @@ import type { BookingTask, DocumentLink, ExpenseItem, TravelFolder, Trip, TripSt
 
 export type EditTarget =
   | { type: "trip" }
+  | { type: "folderTrips"; folderId: string }
   | { type: "stats" }
   | { type: "step"; stepId: string }
   | { type: "bookings" }
@@ -15,6 +16,7 @@ interface DataEditPanelProps {
   folders: TravelFolder[];
   onClose: () => void;
   onSaveExpenses: (expenses: ExpenseItem[]) => Promise<void>;
+  onSaveFolderTrips: (folderId: string, trips: Trip[]) => Promise<void>;
   onSaveTrip: (trip: Trip) => Promise<void>;
   target: EditTarget;
   trip: Trip;
@@ -39,7 +41,7 @@ function parseJsonArray<T>(value: string, label: string): T[] {
 
 const expenseCategories = ["Transport", "Hebergement", "Repas", "Activites", "Documents", "Divers"];
 
-export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSaveTrip, target, trip }: DataEditPanelProps) {
+export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSaveFolderTrips, onSaveTrip, target, trip }: DataEditPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -61,6 +63,15 @@ export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSa
           isSaving={isSaving}
           onSubmit={(nextTrip) => save(setIsSaving, setError, setMessage, () => onSaveTrip(nextTrip))}
           trip={trip}
+        />
+      )}
+      {target.type === "folderTrips" && (
+        <FolderTripsForm
+          folder={folders.find((folder) => folder.id === target.folderId) ?? folders[0]}
+          isSaving={isSaving}
+          onSubmit={(folderId, trips) =>
+            save(setIsSaving, setError, setMessage, () => onSaveFolderTrips(folderId, trips))
+          }
         />
       )}
       {target.type === "stats" && (
@@ -116,6 +127,7 @@ export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSa
 
 function titleFor(target: EditTarget) {
   if (target.type === "trip") return "Voyage";
+  if (target.type === "folderTrips") return "Voyages disponibles";
   if (target.type === "stats") return "Statistiques";
   if (target.type === "step") return "Etape";
   if (target.type === "bookings") return "Reservations";
@@ -184,6 +196,183 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
       <label>Notes privees<textarea onChange={(event) => setNotes(event.target.value)} value={notes} /></label>
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
+  );
+}
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function createBlankTrip(folderId: string): Trip {
+  const id = createId("voyage");
+  return {
+    id,
+    folderId,
+    title: "Nouveau weekend",
+    description: "Ajoute une description courte du voyage.",
+    startDate: new Date().toISOString().slice(0, 10),
+    endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    status: "draft",
+    stats: [
+      { value: "3", label: "jours" },
+      { value: "2", label: "nuits" },
+      { value: "0 EUR", label: "budget indicatif" },
+    ],
+    steps: [
+      {
+        id: `${id}-centre`,
+        label: "Centre ville",
+        shortLabel: "Centre",
+        region: "A definir",
+        country: "A definir",
+        color: "#2f8f67",
+        coordinates: [25.033, 121.5654],
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        nights: "2 nuits",
+        transport: "Transport a preciser.",
+        highlights: ["Budget", "Logement", "Activites"],
+        dailyPlan: [{ date: "Jour 1", summary: "Arrivee et premiere balade." }],
+      },
+    ],
+    bookings: [],
+    documents: [],
+  };
+}
+
+function normalizeTripForSave(trip: Trip, folderId: string): Trip {
+  const cleanTitle = trip.title.trim() || "Nouveau weekend";
+  const nextId = trip.id.trim() || `weekend-${slugify(cleanTitle)}-${Date.now().toString(36)}`;
+  return {
+    ...trip,
+    id: nextId,
+    folderId,
+    title: cleanTitle,
+    description: trip.description.trim() || "Description a completer.",
+    notes: trip.notes?.trim() || undefined,
+    stats: trip.stats.filter((stat) => stat.value.trim() && stat.label.trim()),
+    steps: trip.steps.map((step) => ({
+      ...step,
+      startDate: step.startDate || trip.startDate,
+      endDate: step.endDate || trip.endDate,
+    })),
+    bookings: trip.bookings.map((booking) => ({ ...booking, tripId: nextId })),
+    documents: trip.documents.map((document) => ({ ...document, tripId: nextId })),
+  };
+}
+
+function FolderTripsForm({
+  folder,
+  isSaving,
+  onSubmit,
+}: {
+  folder: TravelFolder;
+  isSaving: boolean;
+  onSubmit: (folderId: string, trips: Trip[]) => void;
+}) {
+  const [draftTrips, setDraftTrips] = useState<Trip[]>(folder.trips);
+  const [editingId, setEditingId] = useState(folder.trips[0]?.id ?? "");
+
+  useEffect(() => {
+    setDraftTrips(folder.trips);
+    setEditingId((current) => (folder.trips.some((trip) => trip.id === current) ? current : folder.trips[0]?.id ?? ""));
+  }, [folder]);
+
+  const editingTrip = draftTrips.find((draftTrip) => draftTrip.id === editingId) ?? draftTrips[0];
+
+  function addTrip() {
+    const nextTrip = createBlankTrip(folder.id);
+    setDraftTrips([nextTrip, ...draftTrips]);
+    setEditingId(nextTrip.id);
+  }
+
+  function duplicateTrip() {
+    if (!editingTrip) return;
+    const nextTripId = createId(slugify(editingTrip.title) || "voyage");
+    const nextTrip: Trip = {
+      ...editingTrip,
+      id: nextTripId,
+      title: `${editingTrip.title} copie`,
+      bookings: editingTrip.bookings.map((booking) => ({ ...booking, id: createId("reservation"), tripId: nextTripId })),
+      documents: editingTrip.documents.map((document) => ({ ...document, id: createId("document"), tripId: nextTripId })),
+    };
+    setDraftTrips([nextTrip, ...draftTrips]);
+    setEditingId(nextTrip.id);
+  }
+
+  function removeTrip(tripId: string) {
+    const tripToRemove = draftTrips.find((item) => item.id === tripId);
+    if (!tripToRemove) return;
+    const confirmed = window.confirm(`Supprimer "${tripToRemove.title}" ?`);
+    if (!confirmed) return;
+    const nextTrips = draftTrips.filter((item) => item.id !== tripId);
+    setDraftTrips(nextTrips);
+    if (editingId === tripId) setEditingId(nextTrips[0]?.id ?? "");
+  }
+
+  function updateTrip(nextTrip: Trip) {
+    const normalizedTrip = normalizeTripForSave(nextTrip, folder.id);
+    setDraftTrips(draftTrips.map((item) => (item.id === editingId ? normalizedTrip : item)));
+    setEditingId(normalizedTrip.id);
+  }
+
+  return (
+    <div className="editor-form">
+      <div className="trip-manager-toolbar">
+        <button className="plain-btn icon-text-btn" onClick={addTrip} type="button">
+          <Plus aria-hidden="true" size={16} />
+          Ajouter un voyage
+        </button>
+        <button className="plain-btn icon-text-btn" disabled={!editingTrip} onClick={duplicateTrip} type="button">
+          <Pencil aria-hidden="true" size={16} />
+          Dupliquer
+        </button>
+      </div>
+      <div className="trip-manager-layout">
+        <div className="editor-list">
+          {draftTrips.length === 0 && <p className="editor-copy">Aucun voyage dans ce dossier.</p>}
+          {draftTrips.map((draftTrip) => (
+            <article className={`trip-manager-item ${draftTrip.id === editingId ? "active" : ""}`} key={draftTrip.id}>
+              <button className="trip-manager-select" onClick={() => setEditingId(draftTrip.id)} type="button">
+                <span>
+                  <strong>{draftTrip.title}</strong>
+                  <small>{draftTrip.startDate} - {draftTrip.endDate}</small>
+                </span>
+              </button>
+              <button
+                aria-label="Supprimer le voyage"
+                className="icon-btn danger-btn"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  removeTrip(draftTrip.id);
+                }}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={16} />
+              </button>
+            </article>
+          ))}
+        </div>
+        {editingTrip ? (
+          <TripForm isSaving={isSaving} onSubmit={updateTrip} trip={editingTrip} />
+        ) : (
+          <p className="editor-copy">Ajoute un voyage pour commencer.</p>
+        )}
+      </div>
+      <button
+        className="primary-btn"
+        disabled={isSaving}
+        onClick={() => onSubmit(folder.id, draftTrips.map((draftTrip) => normalizeTripForSave(draftTrip, folder.id)))}
+        type="button"
+      >
+        Sauvegarder la liste
+      </button>
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { PointerEvent, WheelEvent } from "react";
+import { Settings } from "lucide-react";
 import type { TravelFolder } from "../lib/types";
 import { formatDateRange } from "../lib/format";
 
@@ -8,6 +9,7 @@ interface TripSwitcherProps {
   activeFolderId: string;
   activeTripId: string;
   onFolderChange: (folderId: string) => void;
+  onManageTrips?: () => void;
   onTripChange: (tripId: string) => void;
 }
 
@@ -16,6 +18,7 @@ export function TripSwitcher({
   activeFolderId,
   activeTripId,
   onFolderChange,
+  onManageTrips,
   onTripChange,
 }: TripSwitcherProps) {
   const activeFolder = folders.find((folder) => folder.id === activeFolderId) ?? folders[0];
@@ -108,6 +111,12 @@ export function TripSwitcher({
             </button>
           ))}
         </div>
+        {onManageTrips && (
+          <button className="plain-btn icon-text-btn manage-trips-btn" onClick={onManageTrips} type="button">
+            <Settings aria-hidden="true" size={16} />
+            Gerer les voyages
+          </button>
+        )}
       </div>
 
       <div className="destination-grid" onWheel={handleCarouselWheel}>

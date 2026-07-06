@@ -131,8 +131,12 @@ h1 {
 }
 
 .picker-heading {
-  display: grid;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-items: center;
+  justify-content: center;
 }
 
 .folder-tabs {
@@ -620,6 +624,63 @@ h1 {
 .editor-list {
   display: grid;
   gap: 12px;
+}
+
+.manage-trips-btn {
+  min-height: 46px;
+}
+
+.trip-manager-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-manager-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.trip-manager-item {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 11px 12px;
+  width: 100%;
+}
+
+.trip-manager-item.active {
+  border-color: rgba(31, 111, 79, 0.42);
+  background: rgba(223, 242, 228, 0.7);
+}
+
+.trip-manager-select {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.trip-manager-select strong,
+.trip-manager-select small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.trip-manager-select small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 3px;
+}
+
+.trip-manager-item svg {
+  color: var(--danger);
 }
 
 .editor-item {
