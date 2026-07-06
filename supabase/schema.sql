@@ -32,7 +32,6 @@ create table if not exists public.trips (
   bookings jsonb not null default '[]'::jsonb,
   documents jsonb not null default '[]'::jsonb,
   notes text,
-  deleted_at timestamptz,
   is_public boolean not null default true,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -50,16 +49,9 @@ create table if not exists public.expenses (
   currency text not null default 'EUR' check (currency = 'EUR'),
   date date,
   notes text,
-  deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
-alter table public.expenses
-add column if not exists deleted_at timestamptz;
-
-alter table public.trips
-add column if not exists deleted_at timestamptz;
 
 create index if not exists travel_folders_public_idx on public.travel_folders (is_public, sort_order);
 create index if not exists trips_public_folder_idx on public.trips (is_public, folder_id, sort_order);

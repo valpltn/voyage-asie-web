@@ -80,45 +80,21 @@ describe("public travel data sanitization", () => {
     expect(asieFolder?.trips.find((item) => item.id === "sud-chine-tainan-2026")?.title).toBe("Voyage Chine modifie");
   });
 
-  it("hides bundled expenses when a remote soft-delete exists", () => {
+  it("merges remote expenses without requiring local seed data", () => {
     const expenses = mergeExpensesWithLocal([
       {
-        id: "voyage-chine-vol-aller-canton",
+        id: "remote-expense",
         tripId: "sud-chine-tainan-2026",
-        label: "Vol supprime",
-        category: "Vols",
+        label: "Train",
+        category: "Transport",
         kind: "actual",
-        amount: 424,
+        amount: 42,
         currency: "EUR",
-        deletedAt: "2026-07-06T10:00:00.000Z",
       },
     ]);
 
-    expect(expenses.find((expense) => expense.id === "voyage-chine-vol-aller-canton")).toBeUndefined();
-  });
-
-  it("hides bundled trips when a remote soft-delete exists", () => {
-    const folders = mergeFoldersWithLocal(
-      [
-        {
-          id: "weekends-depuis-taiwan",
-          label: "Weekends depuis Taiwan",
-          trips: [
-            {
-              ...trip,
-              id: "weekend-seoul-2026",
-              folderId: "weekends-depuis-taiwan",
-              deletedAt: "2026-07-06T10:00:00.000Z",
-            },
-          ],
-        },
-      ],
-      true,
-    );
-
-    const weekendFolder = folders.find((folder) => folder.id === "weekends-depuis-taiwan");
-
-    expect(weekendFolder?.trips.find((item) => item.id === "weekend-seoul-2026")).toBeUndefined();
+    expect(expenses).toHaveLength(1);
+    expect(expenses[0].label).toBe("Train");
   });
 
   it("keeps the local database snapshot available as a non-empty fallback", () => {
