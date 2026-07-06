@@ -14,7 +14,16 @@ import { TripMap } from "./components/TripMap";
 import { TripStats } from "./components/TripStats";
 import { TripSwitcher } from "./components/TripSwitcher";
 import { formatDateRange } from "./lib/format";
-import { getCurrentUser, loadTravelData, onAuthStateChange, saveExpense, saveFolder, saveTrip, signOut } from "./lib/travelRepository";
+import {
+  getCurrentProfile,
+  getCurrentUser,
+  loadTravelData,
+  onAuthStateChange,
+  saveExpenseList,
+  saveFolder,
+  saveTrip,
+  signOut,
+} from "./lib/travelRepository";
 import type { ExpenseItem, TravelFolder, Trip, TripStep } from "./lib/types";
 import { LogOut } from "lucide-react";
 
@@ -33,6 +42,7 @@ export function App() {
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
   const [dataSource, setDataSource] = useState<"local" | "supabase">("local");
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,8 +90,10 @@ export function App() {
 
   useEffect(() => {
     getCurrentUser()
-      .then((currentUser) => {
+      .then(async (currentUser) => {
         setUser(currentUser);
+        const profile = currentUser ? await getCurrentProfile(currentUser.id) : null;
+        setIsAdmin(Boolean(profile?.isAdmin));
         return refreshTravelData(Boolean(currentUser));
       })
       .catch((caught) => {
@@ -92,8 +104,13 @@ export function App() {
     return onAuthStateChange((nextUser, event) => {
       if (event === "INITIAL_SESSION") return;
       setUser(nextUser);
+      setIsAdmin(false);
       setShowLogin(false);
-      void refreshTravelData(Boolean(nextUser));
+      void (async () => {
+        const profile = nextUser ? await getCurrentProfile(nextUser.id) : null;
+        setIsAdmin(Boolean(profile?.isAdmin));
+        await refreshTravelData(Boolean(nextUser));
+      })();
     });
   }, [refreshTravelData]);
 
@@ -130,7 +147,7 @@ export function App() {
   }
 
   async function handleSaveTrip(nextTrip: Trip) {
-    if (!user) throw new Error("Connexion requise.");
+    if (!user || !isAdmin) throw new Error("Mode admin requis.");
     const folder = travelFolders.find((item) => item.id === nextTrip.folderId);
     if (!folder) throw new Error("Le dossier du voyage est introuvable.");
     await saveFolder(folder, user.id);
@@ -139,8 +156,8 @@ export function App() {
   }
 
   async function handleSaveExpenses(nextExpenses: ExpenseItem[]) {
-    if (!user) throw new Error("Connexion requise.");
-    await Promise.all(nextExpenses.map((expense) => saveExpense(expense, user.id)));
+    if (!user || !isAdmin) throw new Error("Mode admin requis.");
+    await saveExpenseList(expenseItems, nextExpenses, user.id);
     await refreshTravelData(true);
   }
 
@@ -152,6 +169,7 @@ export function App() {
         {user ? (
           <>
             <span>{user.email}</span>
+            <span>{isAdmin ? "Mode admin" : "Lecture connectee"}</span>
             <button className="plain-btn icon-text-btn" onClick={() => void signOut()} type="button">
               <LogOut aria-hidden="true" size={16} />
               Deconnexion
@@ -166,18 +184,19 @@ export function App() {
 
       <header className="topbar">
         <div className="editable-region">
-          {user && <EditButton label="Modifier le voyage" onClick={() => setEditTarget({ type: "trip" })} />}
+          {isAdmin && <EditButton label="Modifier le voyage" onClick={() => setEditTarget({ type: "trip" })} />}
           <p className="eyebrow">{formatDateRange(activeTrip.startDate, activeTrip.endDate)}</p>
           <h1>{activeTrip.title}</h1>
           <p className="subtitle">{activeTrip.description}</p>
         </div>
-        <TripStats onEdit={user ? () => setEditTarget({ type: "stats" }) : undefined} stats={activeTrip.stats} />
+        <TripStats onEdit={isAdmin ? () => setEditTarget({ type: "stats" }) : undefined} stats={activeTrip.stats} />
       </header>
 
       {showLogin && <LoginPanel onClose={() => setShowLogin(false)} />}
-      {editTarget && user && (
+      {editTarget && isAdmin && (
         <DataEditPanel
           expenses={expenseItems}
+          folders={travelFolders}
           onClose={() => setEditTarget(null)}
           onSaveExpenses={handleSaveExpenses}
           onSaveTrip={handleSaveTrip}
@@ -221,7 +240,7 @@ export function App() {
               <aside className="detail-card" aria-live="polite">
                 {selectedStep && (
                   <StepDetail
-                    onEdit={user ? () => setEditTarget({ type: "step", stepId: selectedStep.id }) : undefined}
+                    onEdit={isAdmin ? () => setEditTarget({ type: "step", stepId: selectedStep.id }) : undefined}
                     step={selectedStep}
                   />
                 )}
@@ -253,22 +272,22 @@ export function App() {
 
       {activeTab === "route" && (
         <RouteTimeline
-          onEditStep={user ? (stepId) => setEditTarget({ type: "step", stepId }) : undefined}
+          onEditStep={isAdmin ? (stepId) => setEditTarget({ type: "step", stepId }) : undefined}
           steps={activeTrip.steps}
         />
       )}
       {activeTab === "bookings" && (
-        <BookingChecklist bookings={activeTrip.bookings} onEdit={user ? () => setEditTarget({ type: "bookings" }) : undefined} />
+        <BookingChecklist bookings={activeTrip.bookings} onEdit={isAdmin ? () => setEditTarget({ type: "bookings" }) : undefined} />
       )}
       {activeTab === "expenses" && (
         <ExpensesOverview
           expenses={expenseItems}
           folders={travelFolders}
-          onEdit={user ? () => setEditTarget({ type: "expenses" }) : undefined}
+          onEdit={isAdmin ? () => setEditTarget({ type: "expenses" }) : undefined}
         />
       )}
       {activeTab === "documents" && (
-        <DocumentList documents={activeTrip.documents} onEdit={user ? () => setEditTarget({ type: "documents" }) : undefined} />
+        <DocumentList documents={activeTrip.documents} onEdit={isAdmin ? () => setEditTarget({ type: "documents" }) : undefined} />
       )}
     </main>
   );

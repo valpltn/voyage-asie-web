@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Trip } from "./types";
-import { mergeFoldersWithLocal, sanitizeTripForPublic } from "./travelRepository";
+import { mergeExpensesWithLocal, mergeFoldersWithLocal, sanitizeTripForPublic } from "./travelRepository";
 
 const trip: Trip = {
   id: "test-trip",
@@ -78,5 +78,22 @@ describe("public travel data sanitization", () => {
 
     expect(asieFolder?.trips.map((item) => item.id)).toContain("taiwan-suite-2026");
     expect(asieFolder?.trips.find((item) => item.id === "sud-chine-tainan-2026")?.title).toBe("Voyage Chine modifie");
+  });
+
+  it("hides bundled expenses when a remote soft-delete exists", () => {
+    const expenses = mergeExpensesWithLocal([
+      {
+        id: "voyage-chine-vol-aller-canton",
+        tripId: "sud-chine-tainan-2026",
+        label: "Vol supprime",
+        category: "Vols",
+        kind: "actual",
+        amount: 424,
+        currency: "EUR",
+        deletedAt: "2026-07-06T10:00:00.000Z",
+      },
+    ]);
+
+    expect(expenses.find((expense) => expense.id === "voyage-chine-vol-aller-canton")).toBeUndefined();
   });
 });

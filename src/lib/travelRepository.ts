@@ -39,12 +39,19 @@ interface ExpenseRow {
   currency: "EUR";
   date?: string | null;
   notes?: string | null;
+  deleted_at?: string | null;
 }
 
 export interface TravelDataResult {
   source: "local" | "supabase";
   folders: TravelFolder[];
   expenses: ExpenseItem[];
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  isAdmin: boolean;
 }
 
 export function sanitizeTripForPublic(trip: Trip): Trip {
@@ -86,6 +93,7 @@ function rowToExpense(row: ExpenseRow): ExpenseItem {
     currency: row.currency,
     date: row.date ?? undefined,
     notes: row.notes ?? undefined,
+    deletedAt: row.deleted_at ?? undefined,
   };
 }
 
@@ -154,9 +162,13 @@ export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePriv
   return validateTravelFolders(Array.from(folders.values()));
 }
 
-function mergeExpensesWithLocal(remoteExpenses: ExpenseItem[]) {
+export function mergeExpensesWithLocal(remoteExpenses: ExpenseItem[]) {
   const expenses = new Map(localExpenseItems.map((expense) => [expense.id, expense]));
   for (const remoteExpense of remoteExpenses) {
+    if (remoteExpense.deletedAt) {
+      expenses.delete(remoteExpense.id);
+      continue;
+    }
     expenses.set(remoteExpense.id, remoteExpense);
   }
   return Array.from(expenses.values());
@@ -171,6 +183,18 @@ export async function getCurrentUser() {
     throw error;
   }
   return data.user;
+}
+
+export async function getCurrentProfile(userId: string): Promise<UserProfile | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("profiles").select("id,email,is_admin").eq("id", userId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    id: data.id,
+    email: data.email,
+    isAdmin: Boolean(data.is_admin),
+  };
 }
 
 export function onAuthStateChange(callback: (user: User | null, event: AuthChangeEvent) => void) {
@@ -208,7 +232,7 @@ export async function loadTravelData(includePrivate: boolean): Promise<TravelDat
     includePrivate ? folderQuery : folderQuery.eq("is_public", true),
     includePrivate ? tripQuery : tripQuery.eq("is_public", true),
     includePrivate
-      ? supabase.from("expenses").select("id,trip_id,label,category,kind,amount,currency,date,notes")
+      ? supabase.from("expenses").select("id,trip_id,label,category,kind,amount,currency,date,notes,deleted_at")
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -274,8 +298,39 @@ export async function saveExpense(expense: ExpenseItem, ownerId: string) {
       currency: expense.currency,
       date: expense.date ?? null,
       notes: expense.notes ?? null,
+      deleted_at: null,
     },
     { onConflict: "id" },
   );
   if (error) throw error;
+}
+
+export async function deleteExpense(expense: ExpenseItem, ownerId: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configure.");
+  const { error } = await supabase.from("expenses").upsert(
+    {
+      id: expense.id,
+      owner_id: ownerId,
+      trip_id: expense.tripId ?? null,
+      label: expense.label,
+      category: expense.category,
+      kind: expense.kind,
+      amount: expense.amount,
+      currency: expense.currency,
+      date: expense.date ?? null,
+      notes: expense.notes ?? null,
+      deleted_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+  if (error) throw error;
+}
+
+export async function saveExpenseList(previousExpenses: ExpenseItem[], nextExpenses: ExpenseItem[], ownerId: string) {
+  const nextIds = new Set(nextExpenses.map((expense) => expense.id));
+  const removedExpenses = previousExpenses.filter((expense) => !nextIds.has(expense.id));
+  await Promise.all([
+    ...nextExpenses.map((expense) => saveExpense(expense, ownerId)),
+    ...removedExpenses.map((expense) => deleteExpense(expense, ownerId)),
+  ]);
 }

@@ -49,9 +49,13 @@ create table if not exists public.expenses (
   currency text not null default 'EUR' check (currency = 'EUR'),
   date date,
   notes text,
+  deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.expenses
+add column if not exists deleted_at timestamptz;
 
 create index if not exists travel_folders_public_idx on public.travel_folders (is_public, sort_order);
 create index if not exists trips_public_folder_idx on public.trips (is_public, folder_id, sort_order);

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
-import type { BookingTask, DocumentLink, ExpenseItem, Trip, TripStat, TripStep } from "../lib/types";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import type { BookingTask, DocumentLink, ExpenseItem, TravelFolder, Trip, TripStat, TripStep } from "../lib/types";
 
 export type EditTarget =
   | { type: "trip" }
@@ -12,6 +12,7 @@ export type EditTarget =
 
 interface DataEditPanelProps {
   expenses: ExpenseItem[];
+  folders: TravelFolder[];
   onClose: () => void;
   onSaveExpenses: (expenses: ExpenseItem[]) => Promise<void>;
   onSaveTrip: (trip: Trip) => Promise<void>;
@@ -36,7 +37,9 @@ function parseJsonArray<T>(value: string, label: string): T[] {
   return parsed as T[];
 }
 
-export function DataEditPanel({ expenses, onClose, onSaveExpenses, onSaveTrip, target, trip }: DataEditPanelProps) {
+const expenseCategories = ["Transport", "Hebergement", "Repas", "Activites", "Documents", "Divers"];
+
+export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSaveTrip, target, trip }: DataEditPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -98,6 +101,7 @@ export function DataEditPanel({ expenses, onClose, onSaveExpenses, onSaveTrip, t
       {target.type === "expenses" && (
         <ExpensesForm
           expenses={expenses}
+          folders={folders}
           isSaving={isSaving}
           onSubmit={(nextExpenses) => save(setIsSaving, setError, setMessage, () => onSaveExpenses(nextExpenses))}
           tripId={trip.id}
@@ -252,7 +256,7 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
 }
 
 function createId(prefix: string) {
-  return `${prefix}-${Date.now().toString(36)}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 function BookingsForm({
@@ -349,83 +353,220 @@ function BookingsForm({
 
 function ExpensesForm({
   expenses,
+  folders,
   isSaving,
   onSubmit,
   tripId,
 }: {
   expenses: ExpenseItem[];
+  folders: TravelFolder[];
   isSaving: boolean;
   onSubmit: (expenses: ExpenseItem[]) => void;
   tripId: string;
 }) {
   const [draft, setDraft] = useState<ExpenseItem[]>(expenses);
+  const [selectedTripId, setSelectedTripId] = useState(tripId);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => setDraft(expenses), [expenses]);
+  const trips = folders.flatMap((folder) => folder.trips.map((trip) => ({ id: trip.id, label: trip.title })));
 
-  function updateExpense(index: number, nextExpense: ExpenseItem) {
-    setDraft(draft.map((expense, currentIndex) => (currentIndex === index ? nextExpense : expense)));
+  useEffect(() => {
+    setDraft(expenses);
+    setEditingId(null);
+  }, [expenses]);
+
+  useEffect(() => setSelectedTripId(tripId), [tripId]);
+
+  function updateExpense(expenseId: string, nextExpense: ExpenseItem) {
+    setDraft(draft.map((expense) => (expense.id === expenseId ? nextExpense : expense)));
   }
 
   function addExpense() {
+    const nextExpense: ExpenseItem = {
+      id: createId("depense"),
+      tripId: selectedTripId === "unassigned" ? undefined : selectedTripId || undefined,
+      label: "",
+      category: "Transport",
+      kind: "planned",
+      amount: 0,
+      currency: "EUR",
+      date: "",
+    };
     setDraft([
+      nextExpense,
       ...draft,
-      {
-        id: createId("depense"),
-        tripId,
-        label: "Nouvelle depense",
-        category: "A classer",
-        kind: "planned",
-        amount: 0,
-        currency: "EUR",
-      },
     ]);
+    setEditingId(nextExpense.id);
   }
+
+  function removeExpense(expenseId: string) {
+    const expense = draft.find((item) => item.id === expenseId);
+    if (!expense) return;
+    const confirmed = window.confirm(`Supprimer "${expense.label || "cette depense"}" ?`);
+    if (!confirmed) return;
+    setDraft(draft.filter((item) => item.id !== expenseId));
+    if (editingId === expenseId) setEditingId(null);
+  }
+
+  const visibleExpenses = draft
+    .filter((expense) => expense.tripId === selectedTripId || (!expense.tripId && selectedTripId === "unassigned"))
+    .sort((left, right) => (right.date ?? "").localeCompare(left.date ?? "") || right.amount - left.amount);
 
   return (
     <form
       className="editor-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(draft);
+        onSubmit(
+          draft.map((expense) => ({
+            ...expense,
+            date: expense.date || undefined,
+            label: expense.label.trim(),
+            category: expense.category.trim(),
+            notes: expense.notes?.trim() || undefined,
+            tripId: expense.tripId || undefined,
+          })),
+        );
       }}
     >
-      <button className="plain-btn icon-text-btn" onClick={addExpense} type="button">
-        <Plus aria-hidden="true" size={16} />
-        Ajouter une depense
-      </button>
+      <div className="expense-editor-toolbar">
+        <label>
+          Voyage a editer
+          <select onChange={(event) => setSelectedTripId(event.target.value)} value={selectedTripId}>
+            {trips.map((trip) => (
+              <option key={trip.id} value={trip.id}>
+                {trip.label}
+              </option>
+            ))}
+            <option value="unassigned">Sans voyage</option>
+          </select>
+        </label>
+        <button className="plain-btn icon-text-btn" onClick={addExpense} type="button">
+          <Plus aria-hidden="true" size={16} />
+          Ajouter une depense
+        </button>
+      </div>
       <div className="editor-list">
-        {draft.map((expense, index) => (
-          <article className="editor-item" key={expense.id}>
-            <div className="editor-item-header">
-              <strong>{expense.label}</strong>
-              <button
-                aria-label="Supprimer la depense"
-                className="icon-btn"
-                onClick={() => setDraft(draft.filter((_, currentIndex) => currentIndex !== index))}
-                type="button"
-              >
-                <Trash2 aria-hidden="true" size={16} />
-              </button>
-            </div>
-            <label>Libelle<input onChange={(event) => updateExpense(index, { ...expense, label: event.target.value })} required value={expense.label} /></label>
-            <div className="form-row">
-              <label>Categorie<input onChange={(event) => updateExpense(index, { ...expense, category: event.target.value })} required value={expense.category} /></label>
-              <label>Montant<input min="0" onChange={(event) => updateExpense(index, { ...expense, amount: Number(event.target.value) })} required step="0.01" type="number" value={expense.amount} /></label>
-            </div>
-            <div className="form-row">
-              <label>
-                Type
-                <select onChange={(event) => updateExpense(index, { ...expense, kind: event.target.value as ExpenseItem["kind"] })} value={expense.kind}>
-                  <option value="planned">Previsionnel</option>
-                  <option value="actual">Passe</option>
-                </select>
-              </label>
-              <label>Date<input onChange={(event) => updateExpense(index, { ...expense, date: event.target.value || undefined })} type="date" value={expense.date ?? ""} /></label>
-            </div>
-            <label>Voyage<input onChange={(event) => updateExpense(index, { ...expense, tripId: event.target.value || undefined })} value={expense.tripId ?? ""} /></label>
-            <label>Notes<textarea onChange={(event) => updateExpense(index, { ...expense, notes: event.target.value || undefined })} value={expense.notes ?? ""} /></label>
-          </article>
-        ))}
+        {visibleExpenses.length === 0 && <p className="editor-copy">Aucune depense pour ce voyage.</p>}
+        {visibleExpenses.map((expense) => {
+          const isEditing = editingId === expense.id;
+          return (
+            <article className="editor-item expense-editor-item" key={expense.id}>
+              <div className="editor-item-header">
+                <div>
+                  <strong>{expense.label || "Nouvelle depense"}</strong>
+                  <span>
+                    {expense.category} - {expense.kind === "planned" ? "Previsionnel" : "Passe"} - {expense.amount} EUR
+                  </span>
+                </div>
+                <div className="editor-actions">
+                  <button
+                    aria-label={isEditing ? "Terminer l'edition" : "Modifier la depense"}
+                    className="icon-btn"
+                    onClick={() => setEditingId(isEditing ? null : expense.id)}
+                    type="button"
+                  >
+                    {isEditing ? <Check aria-hidden="true" size={16} /> : <Pencil aria-hidden="true" size={16} />}
+                  </button>
+                  <button
+                    aria-label="Supprimer la depense"
+                    className="icon-btn danger-btn"
+                    onClick={() => removeExpense(expense.id)}
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" size={16} />
+                  </button>
+                </div>
+              </div>
+              {isEditing && (
+                <>
+                  <label>
+                    Libelle
+                    <input
+                      onChange={(event) => updateExpense(expense.id, { ...expense, label: event.target.value })}
+                      required
+                      value={expense.label}
+                    />
+                  </label>
+                  <div className="form-row">
+                    <label>
+                      Montant
+                      <input
+                        min="0"
+                        onChange={(event) => updateExpense(expense.id, { ...expense, amount: Number(event.target.value) })}
+                        required
+                        step="0.01"
+                        type="number"
+                        value={expense.amount}
+                      />
+                    </label>
+                    <label>
+                      Type
+                      <select
+                        onChange={(event) =>
+                          updateExpense(expense.id, { ...expense, kind: event.target.value as ExpenseItem["kind"] })
+                        }
+                        value={expense.kind}
+                      >
+                        <option value="planned">Previsionnel</option>
+                        <option value="actual">Passe</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="form-row">
+                    <label>
+                      Categorie
+                      <select
+                        onChange={(event) => updateExpense(expense.id, { ...expense, category: event.target.value })}
+                        value={expense.category}
+                      >
+                        {expenseCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Date
+                      <input
+                        onChange={(event) => updateExpense(expense.id, { ...expense, date: event.target.value || undefined })}
+                        type="date"
+                        value={expense.date ?? ""}
+                      />
+                    </label>
+                  </div>
+                  <label>
+                    Voyage
+                    <select
+                      onChange={(event) =>
+                        updateExpense(expense.id, {
+                          ...expense,
+                          tripId: event.target.value === "unassigned" ? undefined : event.target.value,
+                        })
+                      }
+                      value={expense.tripId ?? "unassigned"}
+                    >
+                      {trips.map((trip) => (
+                        <option key={trip.id} value={trip.id}>
+                          {trip.label}
+                        </option>
+                      ))}
+                      <option value="unassigned">Sans voyage</option>
+                    </select>
+                  </label>
+                  <label>
+                    Notes
+                    <textarea
+                      onChange={(event) => updateExpense(expense.id, { ...expense, notes: event.target.value || undefined })}
+                      value={expense.notes ?? ""}
+                    />
+                  </label>
+                </>
+              )}
+            </article>
+          );
+        })}
       </div>
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ArrowDownUp, Filter } from "lucide-react";
 import type { ExpenseItem, TravelFolder } from "../lib/types";
 import { EditButton } from "./EditButton";
 import { EmptyState } from "./EmptyState";
@@ -9,71 +10,130 @@ interface ExpensesOverviewProps {
   onEdit?: () => void;
 }
 
+type ExpenseTypeFilter = "all" | ExpenseItem["kind"];
+type ExpenseSort = "date-desc" | "amount-desc" | "category" | "kind";
+
 const euroFormatter = new Intl.NumberFormat("fr-FR", {
   currency: "EUR",
   maximumFractionDigits: 0,
   style: "currency",
 });
 
+const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 function totalFor(expenses: ExpenseItem[], kind: ExpenseItem["kind"]) {
   return expenses.filter((expense) => expense.kind === kind).reduce((sum, expense) => sum + expense.amount, 0);
 }
 
-function tripLabelById(folders: TravelFolder[]) {
-  return new Map(folders.flatMap((folder) => folder.trips.map((trip) => [trip.id, trip.title] as const)));
+function allTrips(folders: TravelFolder[]) {
+  return folders.flatMap((folder) => folder.trips.map((trip) => ({ id: trip.id, label: trip.title })));
 }
 
-function groupExpensesByTrip(expenses: ExpenseItem[], tripLabels: Map<string, string>) {
-  const groups = new Map<string, { id: string; label: string; expenses: ExpenseItem[] }>();
+function tripLabelById(folders: TravelFolder[]) {
+  return new Map(allTrips(folders).map((trip) => [trip.id, trip.label] as const));
+}
 
+function groupExpensesByCategory(expenses: ExpenseItem[]) {
+  const groups = new Map<string, ExpenseItem[]>();
   for (const expense of expenses) {
-    const key = expense.tripId ?? "unassigned";
-    const label = expense.tripId ? tripLabels.get(expense.tripId) ?? expense.tripId : "Sans voyage";
-    const group = groups.get(key) ?? { id: key, label, expenses: [] };
-    group.expenses.push(expense);
-    groups.set(key, group);
+    groups.set(expense.category, [...(groups.get(expense.category) ?? []), expense]);
   }
+  return Array.from(groups.entries())
+    .map(([category, items]) => ({
+      category,
+      expenses: items,
+      total: items.reduce((sum, expense) => sum + expense.amount, 0),
+    }))
+    .sort((left, right) => right.total - left.total || left.category.localeCompare(right.category));
+}
 
-  return Array.from(groups.values());
+function sortExpenses(expenses: ExpenseItem[], sort: ExpenseSort) {
+  return [...expenses].sort((left, right) => {
+    if (sort === "amount-desc") return right.amount - left.amount;
+    if (sort === "category") return left.category.localeCompare(right.category) || left.label.localeCompare(right.label);
+    if (sort === "kind") return left.kind.localeCompare(right.kind) || left.label.localeCompare(right.label);
+    return (right.date ?? "").localeCompare(left.date ?? "") || right.amount - left.amount;
+  });
+}
+
+function kindLabel(kind: ExpenseItem["kind"]) {
+  return kind === "planned" ? "Previsionnel" : "Passe";
+}
+
+function formatDate(date?: string) {
+  if (!date) return "Sans date";
+  return dateFormatter.format(new Date(`${date}T00:00:00`));
 }
 
 export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverviewProps) {
+  const trips = useMemo(() => allTrips(folders), [folders]);
+  const tripLabels = useMemo(() => tripLabelById(folders), [folders]);
   const [tripFilter, setTripFilter] = useState("all");
-  const tripLabels = tripLabelById(folders);
-  const tripOptions = useMemo(
-    () => [
-      { id: "all", label: "Tous les voyages" },
-      ...folders.flatMap((folder) => folder.trips.map((trip) => ({ id: trip.id, label: trip.title }))),
-      { id: "unassigned", label: "Sans voyage" },
-    ],
-    [folders],
+  const [typeFilter, setTypeFilter] = useState<ExpenseTypeFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sort, setSort] = useState<ExpenseSort>("date-desc");
+
+  const tripOptions = [
+    { id: "all", label: "Tous les voyages" },
+    ...trips,
+    { id: "unassigned", label: "Sans voyage" },
+  ];
+  const categories = Array.from(new Set(expenses.map((expense) => expense.category))).sort((left, right) =>
+    left.localeCompare(right),
   );
-  const filteredExpenses = expenses.filter((expense) => {
-    if (tripFilter === "all") return true;
-    if (tripFilter === "unassigned") return !expense.tripId;
-    return expense.tripId === tripFilter;
-  });
-  const plannedExpenses = filteredExpenses.filter((expense) => expense.kind === "planned");
-  const actualExpenses = filteredExpenses.filter((expense) => expense.kind === "actual");
+  const selectedTripLabel =
+    tripFilter === "all" ? "Budget par voyage" : tripFilter === "unassigned" ? "Sans voyage" : tripLabels.get(tripFilter);
+  const filteredExpenses = sortExpenses(
+    expenses.filter((expense) => {
+      const matchesTrip =
+        tripFilter === "all" || (tripFilter === "unassigned" ? !expense.tripId : expense.tripId === tripFilter);
+      const matchesType = typeFilter === "all" || expense.kind === typeFilter;
+      const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
+      return matchesTrip && matchesType && matchesCategory;
+    }),
+    sort,
+  );
   const plannedTotal = totalFor(filteredExpenses, "planned");
   const actualTotal = totalFor(filteredExpenses, "actual");
-  const tripSummaries = groupExpensesByTrip(expenses, tripLabels).map((group) => {
-    const planned = totalFor(group.expenses, "planned");
-    const actual = totalFor(group.expenses, "actual");
-    return { ...group, actual, balance: planned - actual, planned };
-  });
+  const groupedExpenses = groupExpensesByCategory(filteredExpenses);
 
   if (expenses.length === 0) {
-    return <EmptyState title="Aucune depense" copy="Ajoute des depenses prevues ou passees pour suivre le budget global." />;
+    return <EmptyState title="Aucune depense" copy="Connecte-toi en mode admin pour ajouter le premier budget." />;
   }
 
   return (
     <section className="view active">
-      {onEdit && (
-        <div className="view-actions">
-          <EditButton label="Modifier les depenses" onClick={onEdit} />
+      <div className="expense-header">
+        <div>
+          <p className="eyebrow">Depenses</p>
+          <h2>{selectedTripLabel}</h2>
         </div>
-      )}
+        {onEdit && <EditButton label="Modifier les depenses" onClick={onEdit} />}
+      </div>
+
+      <div className="expense-summary">
+        <article>
+          <span>Previsionnel</span>
+          <strong>{euroFormatter.format(plannedTotal)}</strong>
+        </article>
+        <article>
+          <span>Passe</span>
+          <strong>{euroFormatter.format(actualTotal)}</strong>
+        </article>
+        <article>
+          <span>Reste / ecart</span>
+          <strong>{euroFormatter.format(plannedTotal - actualTotal)}</strong>
+        </article>
+        <article>
+          <span>Lignes</span>
+          <strong>{filteredExpenses.length}</strong>
+        </article>
+      </div>
+
       <div className="filterbar expense-filterbar" aria-label="Filtres depenses">
         <label>
           Voyage
@@ -85,80 +145,71 @@ export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverview
             ))}
           </select>
         </label>
-      </div>
-      <div className="expense-summary">
-        <article>
-          <span>Previsionnel</span>
-          <strong>{euroFormatter.format(plannedTotal)}</strong>
-        </article>
-        <article>
-          <span>Passe</span>
-          <strong>{euroFormatter.format(actualTotal)}</strong>
-        </article>
-        <article>
-          <span>Ecart</span>
-          <strong>{euroFormatter.format(plannedTotal - actualTotal)}</strong>
-        </article>
-      </div>
-
-      {tripFilter === "all" && (
-        <article className="expense-card expense-overview-card">
-          <h2>Bilan par voyage</h2>
-          <div className="expense-table">
-            {tripSummaries.map((summary) => (
-              <div className="expense-balance-row" key={summary.id}>
-                <strong>{summary.label}</strong>
-                <span>Prevu: {euroFormatter.format(summary.planned)}</span>
-                <span>Passe: {euroFormatter.format(summary.actual)}</span>
-                <strong>{euroFormatter.format(summary.balance)}</strong>
-              </div>
+        <label>
+          <span className="filter-label-icon">
+            <Filter aria-hidden="true" size={14} />
+            Type
+          </span>
+          <select onChange={(event) => setTypeFilter(event.target.value as ExpenseTypeFilter)} value={typeFilter}>
+            <option value="all">Tous</option>
+            <option value="planned">Previsionnel</option>
+            <option value="actual">Passe</option>
+          </select>
+        </label>
+        <label>
+          Categorie
+          <select onChange={(event) => setCategoryFilter(event.target.value)} value={categoryFilter}>
+            <option value="all">Toutes</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
             ))}
-          </div>
-        </article>
-      )}
-
-      <div className="expense-columns">
-        <ExpenseTable title="Depenses previsionnelles" expenses={plannedExpenses} tripLabels={tripLabels} />
-        <ExpenseTable title="Depenses passees" expenses={actualExpenses} tripLabels={tripLabels} />
+          </select>
+        </label>
+        <label>
+          <span className="filter-label-icon">
+            <ArrowDownUp aria-hidden="true" size={14} />
+            Tri
+          </span>
+          <select onChange={(event) => setSort(event.target.value as ExpenseSort)} value={sort}>
+            <option value="date-desc">Plus recent</option>
+            <option value="amount-desc">Plus cher</option>
+            <option value="category">Categorie</option>
+            <option value="kind">Type</option>
+          </select>
+        </label>
       </div>
-    </section>
-  );
-}
 
-function ExpenseTable({
-  expenses,
-  title,
-  tripLabels,
-}: {
-  expenses: ExpenseItem[];
-  title: string;
-  tripLabels: Map<string, string>;
-}) {
-  const groupedExpenses = groupExpensesByTrip(expenses, tripLabels);
-
-  return (
-    <article className="expense-card">
-      <h2>{title}</h2>
-      {expenses.length === 0 ? (
-        <p>Aucune depense enregistree.</p>
+      {filteredExpenses.length === 0 ? (
+        <EmptyState title="Aucune depense trouvee" copy="Ajuste les filtres pour afficher d'autres lignes budgetaires." />
       ) : (
-        <div className="expense-table">
+        <div className="expense-category-list">
           {groupedExpenses.map((group) => (
-            <div className="expense-trip-group" key={group.label}>
-              <h3>{group.label}</h3>
-              {group.expenses.map((expense) => (
-                <div className="expense-row" key={expense.id}>
-                  <div>
-                    <strong>{expense.label}</strong>
-                    <span>{expense.category}</span>
+            <article className="expense-card" key={group.category}>
+              <div className="expense-card-heading">
+                <h3>{group.category}</h3>
+                <strong>{euroFormatter.format(group.total)}</strong>
+              </div>
+              <div className="expense-table">
+                {group.expenses.map((expense) => (
+                  <div className="expense-row" key={expense.id}>
+                    <div className="expense-row-main">
+                      <strong>{expense.label}</strong>
+                      <span>
+                        {tripLabels.get(expense.tripId ?? "") ?? "Sans voyage"} - {formatDate(expense.date)}
+                      </span>
+                      {expense.notes && <small>{expense.notes}</small>}
+                    </div>
+                    <span className={`expense-kind ${expense.kind}`}>{kindLabel(expense.kind)}</span>
+                    <strong>{euroFormatter.format(expense.amount)}</strong>
                   </div>
-                  <strong>{euroFormatter.format(expense.amount)}</strong>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </article>
           ))}
         </div>
       )}
-    </article>
+    </section>
   );
 }

@@ -93,4 +93,5 @@ export interface ExpenseItem {
   currency: "EUR";
   date?: string;
   notes?: string;
+  deletedAt?: string;
 }
