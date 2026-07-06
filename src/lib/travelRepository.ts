@@ -238,51 +238,53 @@ export async function signOut() {
 export async function loadTravelData(includePrivate: boolean): Promise<TravelDataResult> {
   if (!isSupabaseConfigured || !supabase) return localData(includePrivate);
 
-  try {
-    const folderQuery = supabase
-      .from("travel_folders")
-      .select("id,label,sort_order,is_public")
-      .order("sort_order", { ascending: true });
+  const [remoteFolders, expenseRows] = await Promise.all([
+    loadRemoteFolders(includePrivate),
+    includePrivate ? loadExpenseRows().catch(() => []) : Promise.resolve([]),
+  ]);
+  const remoteExpenses = (expenseRows as ExpenseRow[]).map(rowToExpense);
 
-    const tripQuery = supabase
-      .from("trips")
-      .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
-      .order("sort_order", { ascending: true });
+  return {
+    source: "supabase",
+    folders: mergeFoldersWithLocal(remoteFolders, includePrivate),
+    expenses: includePrivate ? mergeExpensesWithLocal(remoteExpenses) : [],
+  };
+}
 
-    const [foldersResult, tripsResult, expenseRows] = await Promise.all([
-      includePrivate ? folderQuery : folderQuery.eq("is_public", true),
-      includePrivate ? tripQuery : tripQuery.eq("is_public", true),
-      includePrivate ? loadExpenseRows() : Promise.resolve([]),
-    ]);
+async function loadRemoteFolders(includePrivate: boolean) {
+  if (!supabase) return [];
+  const folderQuery = supabase
+    .from("travel_folders")
+    .select("id,label,sort_order,is_public")
+    .order("sort_order", { ascending: true });
 
-    if (foldersResult.error || tripsResult.error) {
-      throw foldersResult.error ?? tripsResult.error;
-    }
+  const tripQuery = supabase
+    .from("trips")
+    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
+    .order("sort_order", { ascending: true });
 
-    const tripsByFolder = new Map<string, Trip[]>();
-    for (const row of (tripsResult.data ?? []) as TripRow[]) {
-      const trip = rowToTrip(row, includePrivate);
-      tripsByFolder.set(trip.folderId, [...(tripsByFolder.get(trip.folderId) ?? []), trip]);
-    }
+  const [foldersResult, tripsResult] = await Promise.all([
+    includePrivate ? folderQuery : folderQuery.eq("is_public", true),
+    includePrivate ? tripQuery : tripQuery.eq("is_public", true),
+  ]);
 
-    const folders = ((foldersResult.data ?? []) as FolderRow[])
-      .map((folder) => ({
-        id: folder.id,
-        label: folder.label,
-        trips: tripsByFolder.get(folder.id) ?? [],
-      }))
-      .filter((folder) => folder.trips.length > 0 || includePrivate);
+  if (foldersResult.error || tripsResult.error) return [];
 
-    const remoteExpenses = (expenseRows as ExpenseRow[]).map(rowToExpense);
-
-    return {
-      source: "supabase",
-      folders: mergeFoldersWithLocal(validateTravelFolders(folders), includePrivate),
-      expenses: includePrivate ? mergeExpensesWithLocal(remoteExpenses) : [],
-    };
-  } catch {
-    return localData(includePrivate);
+  const tripsByFolder = new Map<string, Trip[]>();
+  for (const row of (tripsResult.data ?? []) as TripRow[]) {
+    const trip = rowToTrip(row, includePrivate);
+    tripsByFolder.set(trip.folderId, [...(tripsByFolder.get(trip.folderId) ?? []), trip]);
   }
+
+  const folders = ((foldersResult.data ?? []) as FolderRow[])
+    .map((folder) => ({
+      id: folder.id,
+      label: folder.label,
+      trips: tripsByFolder.get(folder.id) ?? [],
+    }))
+    .filter((folder) => folder.trips.length > 0 || includePrivate);
+
+  return validateTravelFolders(folders);
 }
 
 export async function saveTrip(trip: Trip, ownerId: string, isPublic = true) {
