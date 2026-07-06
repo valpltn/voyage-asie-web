@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Trip } from "./types";
-import { sanitizeTripForPublic } from "./travelRepository";
+import { mergeFoldersWithLocal, sanitizeTripForPublic } from "./travelRepository";
 
 const trip: Trip = {
   id: "test-trip",
@@ -51,5 +51,32 @@ describe("public travel data sanitization", () => {
     expect(sanitized.notes).toBeUndefined();
     expect(sanitized.documents).toHaveLength(1);
     expect(sanitized.documents[0].id).toBe("public-doc");
+  });
+
+  it("keeps local trips when Supabase only contains a partial migration", () => {
+    const folders = mergeFoldersWithLocal(
+      [
+        {
+          id: "asie-2026",
+          label: "Asie 2026",
+          trips: [
+            {
+              ...trip,
+              id: "sud-chine-tainan-2026",
+              folderId: "asie-2026",
+              title: "Voyage Chine modifie",
+              bookings: [],
+              documents: [],
+            },
+          ],
+        },
+      ],
+      true,
+    );
+
+    const asieFolder = folders.find((folder) => folder.id === "asie-2026");
+
+    expect(asieFolder?.trips.map((item) => item.id)).toContain("taiwan-suite-2026");
+    expect(asieFolder?.trips.find((item) => item.id === "sud-chine-tainan-2026")?.title).toBe("Voyage Chine modifie");
   });
 });

@@ -109,12 +109,57 @@ function tripToRow(trip: Trip, ownerId: string, isPublic = true, sortOrder = 0) 
   };
 }
 
-function localData(): TravelDataResult {
+function localData(includePrivate = true): TravelDataResult {
   return {
     source: "local",
-    folders: localTravelFolders,
-    expenses: localExpenseItems,
+    folders: includePrivate
+      ? localTravelFolders
+      : localTravelFolders.map((folder) => ({
+          ...folder,
+          trips: folder.trips.map(sanitizeTripForPublic),
+        })),
+    expenses: includePrivate ? localExpenseItems : [],
   };
+}
+
+export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePrivate: boolean) {
+  const folders = new Map<string, TravelFolder>();
+
+  for (const localFolder of localTravelFolders) {
+    folders.set(localFolder.id, {
+      ...localFolder,
+      trips: localFolder.trips.map((trip) => (includePrivate ? trip : sanitizeTripForPublic(trip))),
+    });
+  }
+
+  for (const remoteFolder of remoteFolders) {
+    const existingFolder = folders.get(remoteFolder.id);
+    if (!existingFolder) {
+      folders.set(remoteFolder.id, remoteFolder);
+      continue;
+    }
+
+    const trips = new Map(existingFolder.trips.map((trip) => [trip.id, trip]));
+    for (const remoteTrip of remoteFolder.trips) {
+      trips.set(remoteTrip.id, remoteTrip);
+    }
+
+    folders.set(remoteFolder.id, {
+      ...existingFolder,
+      label: remoteFolder.label,
+      trips: Array.from(trips.values()),
+    });
+  }
+
+  return validateTravelFolders(Array.from(folders.values()));
+}
+
+function mergeExpensesWithLocal(remoteExpenses: ExpenseItem[]) {
+  const expenses = new Map(localExpenseItems.map((expense) => [expense.id, expense]));
+  for (const remoteExpense of remoteExpenses) {
+    expenses.set(remoteExpense.id, remoteExpense);
+  }
+  return Array.from(expenses.values());
 }
 
 export async function getCurrentUser() {
@@ -147,7 +192,7 @@ export async function signOut() {
 }
 
 export async function loadTravelData(includePrivate: boolean): Promise<TravelDataResult> {
-  if (!isSupabaseConfigured || !supabase) return localData();
+  if (!isSupabaseConfigured || !supabase) return localData(includePrivate);
 
   const folderQuery = supabase
     .from("travel_folders")
@@ -185,12 +230,12 @@ export async function loadTravelData(includePrivate: boolean): Promise<TravelDat
     }))
     .filter((folder) => folder.trips.length > 0 || includePrivate);
 
-  if (folders.length === 0) return localData();
+  const remoteExpenses = ((expensesResult.data ?? []) as ExpenseRow[]).map(rowToExpense);
 
   return {
     source: "supabase",
-    folders: validateTravelFolders(folders),
-    expenses: ((expensesResult.data ?? []) as ExpenseRow[]).map(rowToExpense),
+    folders: mergeFoldersWithLocal(validateTravelFolders(folders), includePrivate),
+    expenses: includePrivate ? mergeExpensesWithLocal(remoteExpenses) : [],
   };
 }
 
