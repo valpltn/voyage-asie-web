@@ -192,6 +192,13 @@ function isMissingDeletedAtError(error: unknown) {
   return candidate.code === "PGRST204" || (message.includes("deleted_at") && message.includes("schema"));
 }
 
+function isTripReferenceError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; message?: string };
+  const message = candidate.message?.toLowerCase() ?? "";
+  return candidate.code === "23503" || (message.includes("trip_id") && message.includes("foreign key"));
+}
+
 async function loadTripRows(includePrivate: boolean) {
   if (!supabase) return [];
   const query = supabase
@@ -365,7 +372,17 @@ export async function saveFolder(folder: TravelFolder, ownerId: string) {
 
 export async function saveExpense(expense: ExpenseItem, ownerId: string) {
   if (!supabase) throw new Error("Supabase n'est pas configure.");
-  const row = {
+  const row = expenseToRow(expense, ownerId);
+  const error = await upsertExpenseRow(row);
+  if (!error) return;
+  if (!isTripReferenceError(error) || !expense.tripId) throw error;
+
+  const fallbackError = await upsertExpenseRow({ ...row, trip_id: null });
+  if (fallbackError) throw fallbackError;
+}
+
+function expenseToRow(expense: ExpenseItem, ownerId: string) {
+  return {
     id: expense.id,
     owner_id: ownerId,
     trip_id: expense.tripId ?? null,
@@ -377,11 +394,15 @@ export async function saveExpense(expense: ExpenseItem, ownerId: string) {
     date: expense.date ?? null,
     notes: expense.notes ?? null,
   };
+}
+
+async function upsertExpenseRow(row: ReturnType<typeof expenseToRow>) {
+  if (!supabase) throw new Error("Supabase n'est pas configure.");
   const { error } = await supabase.from("expenses").upsert({ ...row, deleted_at: null }, { onConflict: "id" });
-  if (!error) return;
-  if (!isMissingDeletedAtError(error)) throw error;
+  if (!error) return null;
+  if (!isMissingDeletedAtError(error)) return error;
   const fallbackResult = await supabase.from("expenses").upsert(row, { onConflict: "id" });
-  if (fallbackResult.error) throw fallbackResult.error;
+  return fallbackResult.error ?? null;
 }
 
 export async function deleteExpense(expense: ExpenseItem, ownerId: string) {

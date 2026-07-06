@@ -178,8 +178,12 @@ export function App() {
     const tripIds = new Set(nextExpenses.map((expense) => expense.tripId).filter(Boolean));
     const foldersToSave = travelFolders.filter((folder) => folder.trips.some((trip) => tripIds.has(trip.id)));
     for (const folder of foldersToSave) {
-      await saveFolder(folder, user.id);
-      await Promise.all(folder.trips.filter((trip) => tripIds.has(trip.id)).map((trip) => saveTrip(trip, user.id, true)));
+      try {
+        await saveFolder(folder, user.id);
+        await Promise.all(folder.trips.filter((trip) => tripIds.has(trip.id)).map((trip) => saveTrip(trip, user.id, true)));
+      } catch {
+        // If the trip cannot be synchronized, expenses are still saved without trip_id by the repository fallback.
+      }
     }
     await saveExpenseList(expenseItems, nextExpenses, user.id);
     await refreshTravelData(true);
