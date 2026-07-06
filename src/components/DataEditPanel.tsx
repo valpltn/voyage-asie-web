@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { geocodeAddress, roundCoordinate } from "../lib/geocoding";
 import type { BookingTask, DocumentLink, ExpenseItem, TravelFolder, Trip, TripStat, TripStep } from "../lib/types";
 
 export type EditTarget =
@@ -7,6 +8,7 @@ export type EditTarget =
   | { type: "folderTrips"; folderId: string }
   | { type: "stats" }
   | { type: "step"; stepId: string }
+  | { type: "steps" }
   | { type: "bookings" }
   | { type: "documents" }
   | { type: "expenses" };
@@ -31,6 +33,24 @@ function linesToArray(value: string) {
 
 function arrayToLines(value: string[]) {
   return value.join("\n");
+}
+
+function dailyPlanToLines(value: TripStep["dailyPlan"]) {
+  return value.map((item) => `${item.date} | ${item.summary}`).join("\n");
+}
+
+function linesToDailyPlan(value: string) {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [date, ...summaryParts] = item.split("|");
+      return {
+        date: date.trim() || "Jour",
+        summary: summaryParts.join("|").trim() || item,
+      };
+    });
 }
 
 function parseJsonArray<T>(value: string, label: string): T[] {
@@ -92,6 +112,13 @@ export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSa
           step={trip.steps.find((step) => step.id === target.stepId) ?? trip.steps[0]}
         />
       )}
+      {target.type === "steps" && (
+        <StepsForm
+          isSaving={isSaving}
+          onSubmit={(steps) => save(setIsSaving, setError, setMessage, () => onSaveTrip({ ...trip, steps }))}
+          trip={trip}
+        />
+      )}
       {target.type === "bookings" && (
         <BookingsForm
           bookings={trip.bookings}
@@ -130,6 +157,7 @@ function titleFor(target: EditTarget) {
   if (target.type === "folderTrips") return "Voyages disponibles";
   if (target.type === "stats") return "Statistiques";
   if (target.type === "step") return "Etape";
+  if (target.type === "steps") return "Etapes du parcours";
   if (target.type === "bookings") return "Reservations";
   if (target.type === "documents") return "Documents";
   return "Depenses";
@@ -162,6 +190,11 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
   const [status, setStatus] = useState<Trip["status"]>(trip.status);
   const [imageUrl, setImageUrl] = useState(trip.imageUrl ?? "");
   const [notes, setNotes] = useState(trip.notes ?? "");
+  const [steps, setSteps] = useState(trip.steps);
+  const [cityQuery, setCityQuery] = useState(trip.steps[0]?.label ?? trip.title);
+  const [geocodingMessage, setGeocodingMessage] = useState<string | null>(null);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   useEffect(() => {
     setTitle(trip.title);
@@ -171,7 +204,39 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
     setStatus(trip.status);
     setImageUrl(trip.imageUrl ?? "");
     setNotes(trip.notes ?? "");
+    setSteps(trip.steps);
+    setCityQuery(trip.steps[0]?.label ?? trip.title);
+    setGeocodingMessage(null);
+    setGeocodingError(null);
   }, [trip]);
+
+  async function handleCityGeocoding() {
+    setIsGeocoding(true);
+    setGeocodingMessage(null);
+    setGeocodingError(null);
+    try {
+      const result = await geocodeAddress(cityQuery);
+      const cityLabel = result.city ?? cityQuery.trim();
+      const nextStep = {
+        ...(steps[0] ?? createDefaultStep(trip.id, startDate, endDate)),
+        country: result.country ?? steps[0]?.country ?? "A definir",
+        coordinates: result.coordinates,
+        label: cityLabel,
+        shortLabel: cityLabel,
+        startDate,
+        endDate,
+      };
+      setSteps([nextStep, ...steps.slice(1)]);
+      if (!title.trim() || title === "Nouveau weekend") {
+        setTitle(cityLabel);
+      }
+      setGeocodingMessage(`Ville trouvee : ${result.address}.`);
+    } catch (caught) {
+      setGeocodingError(caught instanceof Error ? caught.message : "Recherche impossible.");
+    } finally {
+      setIsGeocoding(false);
+    }
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -184,6 +249,11 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
       status,
       imageUrl: imageUrl.trim() || undefined,
       notes: notes || undefined,
+      steps: steps.map((step, index) => ({
+        ...step,
+        endDate: index === 0 ? endDate : step.endDate,
+        startDate: index === 0 ? startDate : step.startDate,
+      })),
     });
   }
 
@@ -192,6 +262,29 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
       <label>Titre<input onChange={(event) => setTitle(event.target.value)} required value={title} /></label>
       <label>Description<textarea onChange={(event) => setDescription(event.target.value)} required value={description} /></label>
       <label>Image du voyage<input onChange={(event) => setImageUrl(event.target.value)} placeholder="https://..." type="url" value={imageUrl} /></label>
+      <div className="geocoding-box">
+        <label>
+          Ville principale
+          <span className="geocoding-search-row">
+            <input
+              onChange={(event) => setCityQuery(event.target.value)}
+              placeholder="Ex. Osaka, Japon"
+              value={cityQuery}
+            />
+            <button className="plain-btn icon-text-btn" disabled={isGeocoding || !cityQuery.trim()} onClick={handleCityGeocoding} type="button">
+              <Search aria-hidden="true" size={16} />
+              {isGeocoding ? "Recherche..." : "Rechercher"}
+            </button>
+          </span>
+        </label>
+        {steps[0] && (
+          <p className="editor-copy">
+            Coordonnees : {steps[0].coordinates[0]}, {steps[0].coordinates[1]}
+          </p>
+        )}
+        {geocodingMessage && <p className="inline-success">{geocodingMessage}</p>}
+        {geocodingError && <p className="inline-error">{geocodingError}</p>}
+      </div>
       <div className="form-row">
         <label>Debut<input onChange={(event) => setStartDate(event.target.value)} required type="date" value={startDate} /></label>
         <label>Fin<input onChange={(event) => setEndDate(event.target.value)} required type="date" value={endDate} /></label>
@@ -209,6 +302,24 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
   );
+}
+
+function createDefaultStep(tripId: string, startDate: string, endDate: string): TripStep {
+  return {
+    id: `${tripId}-centre`,
+    label: "Centre ville",
+    shortLabel: "Centre",
+    region: "A definir",
+    country: "A definir",
+    color: "#2f8f67",
+    coordinates: [25.033, 121.5654],
+    startDate,
+    endDate,
+    nights: "A definir",
+    transport: "Transport a preciser.",
+    highlights: ["Budget", "Logement", "Activites"],
+    dailyPlan: [{ date: "Jour 1", summary: "Arrivee et premiere balade." }],
+  };
 }
 
 function slugify(value: string) {
@@ -237,19 +348,12 @@ function createBlankTrip(folderId: string): Trip {
     ],
     steps: [
       {
-        id: `${id}-centre`,
-        label: "Centre ville",
-        shortLabel: "Centre",
-        region: "A definir",
-        country: "A definir",
-        color: "#2f8f67",
-        coordinates: [25.033, 121.5654],
-        startDate: new Date().toISOString().slice(0, 10),
-        endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        ...createDefaultStep(
+          id,
+          new Date().toISOString().slice(0, 10),
+          new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        ),
         nights: "2 nuits",
-        transport: "Transport a preciser.",
-        highlights: ["Budget", "Logement", "Activites"],
-        dailyPlan: [{ date: "Jour 1", summary: "Arrivee et premiere balade." }],
       },
     ],
     bookings: [],
@@ -437,18 +541,48 @@ function StatsForm({
 function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (step: TripStep) => void; step: TripStep }) {
   const [draft, setDraft] = useState(step);
   const [highlights, setHighlights] = useState(arrayToLines(step.highlights));
+  const [dailyPlan, setDailyPlan] = useState(dailyPlanToLines(step.dailyPlan));
+  const [addressQuery, setAddressQuery] = useState(step.label);
+  const [geocodingMessage, setGeocodingMessage] = useState<string | null>(null);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   useEffect(() => {
     setDraft(step);
     setHighlights(arrayToLines(step.highlights));
+    setDailyPlan(dailyPlanToLines(step.dailyPlan));
+    setAddressQuery(step.label);
+    setGeocodingMessage(null);
+    setGeocodingError(null);
   }, [step]);
+
+  async function handleGeocoding() {
+    setIsGeocoding(true);
+    setGeocodingMessage(null);
+    setGeocodingError(null);
+    try {
+      const result = await geocodeAddress(addressQuery);
+      setDraft((current) => ({ ...current, coordinates: result.coordinates }));
+      setGeocodingMessage(`Coordonnees trouvees pour ${result.address}.`);
+    } catch (caught) {
+      setGeocodingError(caught instanceof Error ? caught.message : "Recherche impossible.");
+    } finally {
+      setIsGeocoding(false);
+    }
+  }
+
+  function updateCoordinate(index: 0 | 1, value: string) {
+    const nextCoordinates: [number, number] = [...draft.coordinates];
+    nextCoordinates[index] = roundCoordinate(Number(value));
+    setDraft({ ...draft, coordinates: nextCoordinates });
+  }
 
   return (
     <form
       className="editor-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit({ ...draft, highlights: linesToArray(highlights) });
+        onSubmit({ ...draft, dailyPlan: linesToDailyPlan(dailyPlan), highlights: linesToArray(highlights) });
       }}
     >
       <label>Nom<input onChange={(event) => setDraft({ ...draft, label: event.target.value })} required value={draft.label} /></label>
@@ -457,6 +591,50 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
         <label>Pays<input onChange={(event) => setDraft({ ...draft, country: event.target.value })} required value={draft.country} /></label>
         <label>Region<input onChange={(event) => setDraft({ ...draft, region: event.target.value })} required value={draft.region} /></label>
       </div>
+      <div className="geocoding-box">
+        <label>
+          Adresse ou lieu
+          <span className="geocoding-search-row">
+            <input
+              onChange={(event) => setAddressQuery(event.target.value)}
+              placeholder="Ex. Tokyo Station, Japan"
+              value={addressQuery}
+            />
+            <button className="plain-btn icon-text-btn" disabled={isGeocoding || !addressQuery.trim()} onClick={handleGeocoding} type="button">
+              <Search aria-hidden="true" size={16} />
+              {isGeocoding ? "Recherche..." : "Rechercher"}
+            </button>
+          </span>
+        </label>
+        {geocodingMessage && <p className="inline-success">{geocodingMessage}</p>}
+        {geocodingError && <p className="inline-error">{geocodingError}</p>}
+      </div>
+      <div className="form-row">
+        <label>
+          Latitude
+          <input
+            max="90"
+            min="-90"
+            onChange={(event) => updateCoordinate(0, event.target.value)}
+            required
+            step="0.0001"
+            type="number"
+            value={draft.coordinates[0]}
+          />
+        </label>
+        <label>
+          Longitude
+          <input
+            max="180"
+            min="-180"
+            onChange={(event) => updateCoordinate(1, event.target.value)}
+            required
+            step="0.0001"
+            type="number"
+            value={draft.coordinates[1]}
+          />
+        </label>
+      </div>
       <div className="form-row">
         <label>Debut<input onChange={(event) => setDraft({ ...draft, startDate: event.target.value })} required type="date" value={draft.startDate} /></label>
         <label>Fin<input onChange={(event) => setDraft({ ...draft, endDate: event.target.value })} required type="date" value={draft.endDate} /></label>
@@ -464,8 +642,125 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
       <label>Nuits<input onChange={(event) => setDraft({ ...draft, nights: event.target.value })} required value={draft.nights} /></label>
       <label>Transport<textarea onChange={(event) => setDraft({ ...draft, transport: event.target.value })} required value={draft.transport} /></label>
       <label>Temps forts<textarea onChange={(event) => setHighlights(event.target.value)} value={highlights} /></label>
+      <label>Planning jour par jour<textarea onChange={(event) => setDailyPlan(event.target.value)} placeholder="Jour 1 | Arrivee et installation" value={dailyPlan} /></label>
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
+  );
+}
+
+function createBlankStep(trip: Trip, index: number): TripStep {
+  const id = createId("etape");
+  return {
+    ...createDefaultStep(id, trip.startDate, trip.endDate),
+    id,
+    label: `Nouvelle etape ${index + 1}`,
+    shortLabel: `Etape ${index + 1}`,
+  };
+}
+
+function normalizeStepForSave(step: TripStep): TripStep {
+  const cleanLabel = step.label.trim() || "Nouvelle etape";
+  return {
+    ...step,
+    id: step.id.trim() || createId("etape"),
+    label: cleanLabel,
+    shortLabel: step.shortLabel.trim() || cleanLabel,
+    region: step.region.trim() || "A definir",
+    country: step.country.trim() || "A definir",
+    nights: step.nights.trim() || "A definir",
+    transport: step.transport.trim() || "Transport a preciser.",
+    highlights: step.highlights.map((highlight) => highlight.trim()).filter(Boolean),
+    dailyPlan: step.dailyPlan.length > 0 ? step.dailyPlan : [{ date: "Jour 1", summary: "Planning a completer." }],
+  };
+}
+
+function StepsForm({
+  isSaving,
+  onSubmit,
+  trip,
+}: {
+  isSaving: boolean;
+  onSubmit: (steps: TripStep[]) => void;
+  trip: Trip;
+}) {
+  const [draftSteps, setDraftSteps] = useState<TripStep[]>(trip.steps);
+  const [editingId, setEditingId] = useState(trip.steps[0]?.id ?? "");
+
+  useEffect(() => {
+    setDraftSteps(trip.steps);
+    setEditingId((current) => (trip.steps.some((step) => step.id === current) ? current : trip.steps[0]?.id ?? ""));
+  }, [trip]);
+
+  const editingStep = draftSteps.find((step) => step.id === editingId) ?? draftSteps[0];
+
+  function addStep() {
+    const nextStep = createBlankStep(trip, draftSteps.length);
+    setDraftSteps([...draftSteps, nextStep]);
+    setEditingId(nextStep.id);
+  }
+
+  function removeStep(stepId: string) {
+    const stepToRemove = draftSteps.find((step) => step.id === stepId);
+    if (!stepToRemove) return;
+    const confirmed = window.confirm(`Supprimer "${stepToRemove.label}" ?`);
+    if (!confirmed) return;
+    const nextSteps = draftSteps.filter((step) => step.id !== stepId);
+    setDraftSteps(nextSteps);
+    if (editingId === stepId) setEditingId(nextSteps[0]?.id ?? "");
+  }
+
+  function updateStep(nextStep: TripStep) {
+    const normalizedStep = normalizeStepForSave(nextStep);
+    setDraftSteps(draftSteps.map((step) => (step.id === editingId ? normalizedStep : step)));
+    setEditingId(normalizedStep.id);
+  }
+
+  return (
+    <div className="editor-form">
+      <button className="plain-btn icon-text-btn" onClick={addStep} type="button">
+        <Plus aria-hidden="true" size={16} />
+        Ajouter une etape
+      </button>
+      <div className="trip-manager-layout">
+        <div className="editor-list steps-manager-list" aria-label="Etapes du parcours">
+          {draftSteps.length === 0 && <p className="editor-copy">Aucune etape dans ce parcours.</p>}
+          {draftSteps.map((step, index) => (
+            <article className={`trip-manager-item ${step.id === editingId ? "active" : ""}`} key={step.id}>
+              <button className="trip-manager-select" onClick={() => setEditingId(step.id)} type="button">
+                <span>
+                  <strong>{index + 1}. {step.label}</strong>
+                  <small>{step.startDate} - {step.endDate}</small>
+                </span>
+              </button>
+              <button
+                aria-label="Supprimer l'etape"
+                className="icon-btn danger-btn"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  removeStep(step.id);
+                }}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={16} />
+              </button>
+            </article>
+          ))}
+        </div>
+        {editingStep ? (
+          <StepForm isSaving={isSaving} onSubmit={updateStep} step={editingStep} />
+        ) : (
+          <p className="editor-copy">Ajoute une etape pour commencer.</p>
+        )}
+      </div>
+      <button
+        className="primary-btn"
+        disabled={isSaving}
+        onClick={() => onSubmit(draftSteps.map(normalizeStepForSave))}
+        type="button"
+      >
+        Sauvegarder les etapes
+      </button>
+    </div>
   );
 }
 

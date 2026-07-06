@@ -312,6 +312,7 @@ export function App() {
       {activeTab === "route" && (
         <RouteTimeline
           onEditStep={isAdmin ? (stepId) => setEditTarget({ type: "step", stepId }) : undefined}
+          onManageSteps={isAdmin ? () => setEditTarget({ type: "steps" }) : undefined}
           steps={activeTrip.steps}
         />
       )}

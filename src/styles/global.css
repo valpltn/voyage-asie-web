@@ -615,6 +615,36 @@ h1 {
   min-height: 420px;
 }
 
+.geocoding-box {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.geocoding-search-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.inline-error,
+.inline-success {
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.inline-error {
+  color: var(--danger);
+}
+
+.inline-success {
+  color: var(--accent-strong);
+}
+
 .editor-copy {
   color: var(--muted);
   line-height: 1.5;
@@ -651,7 +681,21 @@ h1 {
   scrollbar-width: thin;
 }
 
+.steps-manager-list {
+  --trip-manager-row-height: 74px;
+  max-height: calc(var(--trip-manager-row-height) * 4 + 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-color: rgba(47, 143, 103, 0.34) transparent;
+  scrollbar-width: thin;
+}
+
 .trip-manager-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.steps-manager-list::-webkit-scrollbar {
   width: 8px;
 }
 
@@ -659,7 +703,16 @@ h1 {
   background: transparent;
 }
 
+.steps-manager-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .trip-manager-list::-webkit-scrollbar-thumb {
+  background: rgba(47, 143, 103, 0.28);
+  border-radius: 999px;
+}
+
+.steps-manager-list::-webkit-scrollbar-thumb {
   background: rgba(47, 143, 103, 0.28);
   border-radius: 999px;
 }
@@ -1628,6 +1681,7 @@ h1 {
   .filterbar,
   .admin-grid,
   .form-row,
+  .geocoding-search-row,
   .expense-editor-toolbar {
     grid-template-columns: 1fr;
   }
