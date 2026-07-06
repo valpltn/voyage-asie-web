@@ -641,6 +641,29 @@ h1 {
   gap: 14px;
 }
 
+.trip-manager-list {
+  --trip-manager-row-height: 74px;
+  max-height: calc(var(--trip-manager-row-height) * 4 + 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-color: rgba(47, 143, 103, 0.34) transparent;
+  scrollbar-width: thin;
+}
+
+.trip-manager-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.trip-manager-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trip-manager-list::-webkit-scrollbar-thumb {
+  background: rgba(47, 143, 103, 0.28);
+  border-radius: 999px;
+}
+
 .trip-manager-item {
   align-items: center;
   border: 1px solid var(--line);
@@ -649,6 +672,7 @@ h1 {
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
+  min-height: var(--trip-manager-row-height);
   padding: 11px 12px;
   width: 100%;
 }

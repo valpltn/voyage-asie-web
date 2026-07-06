@@ -334,7 +334,7 @@ function FolderTripsForm({
         </button>
       </div>
       <div className="trip-manager-layout">
-        <div className="editor-list">
+        <div className="editor-list trip-manager-list" aria-label="Voyages du dossier">
           {draftTrips.length === 0 && <p className="editor-copy">Aucun voyage dans ce dossier.</p>}
           {draftTrips.map((draftTrip) => (
             <article className={`trip-manager-item ${draftTrip.id === editingId ? "active" : ""}`} key={draftTrip.id}>
