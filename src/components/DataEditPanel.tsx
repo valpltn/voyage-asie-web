@@ -1077,7 +1077,7 @@ function ExpensesForm({
           );
         })}
       </div>
-      <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
+      <button className="primary-btn expense-save-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
   );
 }
