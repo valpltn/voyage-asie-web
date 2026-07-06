@@ -139,9 +139,23 @@ with check (
 );
 
 drop policy if exists "Expenses owner only" on public.expenses;
-create policy "Expenses owner only"
+drop policy if exists "Expenses public read" on public.expenses;
+create policy "Expenses public read"
+on public.expenses for select
+using (true);
+
+drop policy if exists "Expenses admin write" on public.expenses;
+create policy "Expenses admin write"
 on public.expenses for all
-using (auth.uid() = owner_id)
+using (
+  auth.uid() = owner_id
+  and exists (
+    select 1
+    from public.profiles profile
+    where profile.id = auth.uid()
+      and profile.is_admin = true
+  )
+)
 with check (
   auth.uid() = owner_id
   and exists (

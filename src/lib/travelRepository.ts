@@ -123,7 +123,7 @@ function localData(includePrivate = true): TravelDataResult {
           ...folder,
           trips: folder.trips.map(sanitizeTripForPublic),
         })),
-    expenses: includePrivate ? localDatabase.expenses : [],
+    expenses: localDatabase.expenses,
   };
 }
 
@@ -241,14 +241,14 @@ export async function loadTravelData(includePrivate: boolean): Promise<TravelDat
 
   const [remoteFolders, expenseRows] = await Promise.all([
     loadRemoteFolders(includePrivate),
-    includePrivate ? loadExpenseRows().catch(() => []) : Promise.resolve([]),
+    loadExpenseRows().catch(() => []),
   ]);
   const remoteExpenses = (expenseRows as ExpenseRow[]).map(rowToExpense);
 
   return {
     source: "supabase",
     folders: ensureFolders(mergeFoldersWithLocal(remoteFolders, includePrivate), includePrivate),
-    expenses: includePrivate ? mergeExpensesWithLocal(remoteExpenses) : [],
+    expenses: mergeExpensesWithLocal(remoteExpenses),
   };
 }
 
