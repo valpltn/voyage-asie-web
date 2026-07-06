@@ -4,7 +4,6 @@ import { BookingChecklist } from "./components/BookingChecklist";
 import { DataEditPanel } from "./components/DataEditPanel";
 import type { EditTarget } from "./components/DataEditPanel";
 import { DocumentList } from "./components/DocumentList";
-import { EditButton } from "./components/EditButton";
 import { EmptyState } from "./components/EmptyState";
 import { ExpensesOverview } from "./components/ExpensesOverview";
 import { LoginPanel } from "./components/LoginPanel";
@@ -175,12 +174,12 @@ export function App() {
     await refreshTravelData(true);
   }
 
-  async function handleSaveFolderTrips(folderId: string, nextTrips: Trip[]) {
+  async function handleSaveFolderTrips(nextFolder: TravelFolder) {
     if (!user || !isAdmin) throw new Error("Mode admin requis.");
-    const folder = travelFolders.find((item) => item.id === folderId);
+    const folder = travelFolders.find((item) => item.id === nextFolder.id);
     if (!folder) throw new Error("Le dossier est introuvable.");
-    await saveFolder(folder, user.id);
-    await saveTripList(folder.trips, nextTrips, user.id);
+    await saveFolder(nextFolder, user.id);
+    await saveTripList(folder.trips, nextFolder.trips, user.id);
     await refreshTravelData(true);
   }
 
@@ -223,7 +222,6 @@ export function App() {
 
       <header className="topbar">
         <div className="editable-region">
-          {isAdmin && <EditButton label="Modifier le voyage" onClick={() => setEditTarget({ type: "trip" })} />}
           <p className="eyebrow">{formatDateRange(activeTrip.startDate, activeTrip.endDate)}</p>
           <h1>{activeTrip.title}</h1>
           <p className="subtitle">{activeTrip.description}</p>

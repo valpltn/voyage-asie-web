@@ -23,6 +23,7 @@ interface TripRow {
   steps: Trip["steps"];
   bookings: Trip["bookings"];
   documents: Trip["documents"];
+  image_url?: string | null;
   notes?: string | null;
   is_public: boolean;
   sort_order: number;
@@ -74,6 +75,7 @@ function rowToTrip(row: TripRow, includePrivate: boolean): Trip {
     steps: row.steps ?? [],
     bookings: row.bookings ?? [],
     documents: row.documents ?? [],
+    imageUrl: row.image_url ?? undefined,
     notes: row.notes ?? undefined,
   };
 
@@ -108,6 +110,7 @@ function tripToRow(trip: Trip, ownerId: string, isPublic = true, sortOrder = 0) 
     steps: trip.steps,
     bookings: trip.bookings,
     documents: trip.documents,
+    image_url: trip.imageUrl ?? null,
     notes: trip.notes ?? null,
     is_public: isPublic,
     sort_order: sortOrder,
@@ -175,15 +178,30 @@ function isTripReferenceError(error: unknown) {
   return candidate.code === "23503" || (message.includes("trip_id") && message.includes("foreign key"));
 }
 
+function isMissingColumnError(error: unknown, columnName: string) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; message?: string };
+  const message = candidate.message?.toLowerCase() ?? "";
+  return candidate.code === "PGRST204" || (message.includes(columnName) && message.includes("schema"));
+}
+
 async function loadTripRows(includePrivate: boolean) {
   if (!supabase) return [];
   const query = supabase
     .from("trips")
-    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
+    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,image_url,notes,is_public,sort_order")
     .order("sort_order", { ascending: true });
   const result = await (includePrivate ? query : query.eq("is_public", true));
-  if (result.error) throw result.error;
-  return result.data ?? [];
+  if (!result.error) return result.data ?? [];
+  if (!isMissingColumnError(result.error, "image_url")) throw result.error;
+
+  const fallbackQuery = supabase
+    .from("trips")
+    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
+    .order("sort_order", { ascending: true });
+  const fallbackResult = await (includePrivate ? fallbackQuery : fallbackQuery.eq("is_public", true));
+  if (fallbackResult.error) throw fallbackResult.error;
+  return fallbackResult.data ?? [];
 }
 
 async function loadExpenseRows() {
@@ -295,7 +313,11 @@ export async function saveTrip(trip: Trip, ownerId: string, isPublic = true) {
   if (!supabase) throw new Error("Supabase n'est pas configure.");
   validateTravelFolders([{ id: trip.folderId, label: "Validation", trips: [trip] }]);
   const { error } = await supabase.from("trips").upsert(tripToRow(trip, ownerId, isPublic), { onConflict: "id" });
-  if (error) throw error;
+  if (!error) return;
+  if (!isMissingColumnError(error, "image_url")) throw error;
+  const { image_url: _imageUrl, ...fallbackRow } = tripToRow(trip, ownerId, isPublic);
+  const fallbackResult = await supabase.from("trips").upsert(fallbackRow, { onConflict: "id" });
+  if (fallbackResult.error) throw fallbackResult.error;
 }
 
 export async function deleteTrip(trip: Trip, _ownerId: string) {

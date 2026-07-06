@@ -120,34 +120,37 @@ export function TripSwitcher({
       </div>
 
       <div className="destination-grid" onWheel={handleCarouselWheel}>
-        {activeFolder.trips.map((trip) => (
-          <button
-            aria-pressed={trip.id === activeTripId}
-            className={`destination-card ${trip.id === activeTripId ? "active" : ""} ${
-              trip.id === expandedTripId ? "expanded" : ""
-            }`}
-            key={trip.id}
-            onClick={() => onTripChange(trip.id)}
-            onFocus={() => handleCardPointerEnter(trip.id)}
-            onPointerEnter={() => handleCardPointerEnter(trip.id)}
-            onPointerLeave={handleCardPointerLeave}
-            onBlur={() => {
-              clearHoverTimers();
-              setExpandedTripId(null);
-            }}
-            type="button"
-          >
-            <span
-              className="destination-photo"
-              style={{ backgroundImage: `url("${tripImages[trip.id] ?? fallbackImage}")` }}
-            />
-            <span className="destination-content">
-              <span className="destination-meta">{formatDateRange(trip.startDate, trip.endDate)}</span>
-              <strong>{trip.title}</strong>
-              <span>{trip.stats.map((stat) => `${stat.value} ${stat.label}`).join(" - ")}</span>
-            </span>
-          </button>
-        ))}
+        {activeFolder.trips.map((trip) => {
+          const imageUrl = trip.imageUrl ?? tripImages[trip.id] ?? fallbackImage;
+          return (
+            <button
+              aria-pressed={trip.id === activeTripId}
+              className={`destination-card ${trip.id === activeTripId ? "active" : ""} ${
+                trip.id === expandedTripId ? "expanded" : ""
+              }`}
+              key={trip.id}
+              onClick={() => onTripChange(trip.id)}
+              onFocus={() => handleCardPointerEnter(trip.id)}
+              onPointerEnter={() => handleCardPointerEnter(trip.id)}
+              onPointerLeave={handleCardPointerLeave}
+              onBlur={() => {
+                clearHoverTimers();
+                setExpandedTripId(null);
+              }}
+              type="button"
+            >
+              <span
+                className="destination-photo"
+                style={{ backgroundImage: `url("${imageUrl}")` }}
+              />
+              <span className="destination-content">
+                <span className="destination-meta">{formatDateRange(trip.startDate, trip.endDate)}</span>
+                <strong>{trip.title}</strong>
+                <span>{trip.stats.map((stat) => `${stat.value} ${stat.label}`).join(" - ")}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

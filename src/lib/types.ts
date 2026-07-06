@@ -72,6 +72,7 @@ export interface Trip {
   steps: TripStep[];
   bookings: BookingTask[];
   documents: DocumentLink[];
+  imageUrl?: string;
   notes?: string;
   deletedAt?: string;
 }

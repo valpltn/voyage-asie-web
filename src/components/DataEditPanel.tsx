@@ -16,7 +16,7 @@ interface DataEditPanelProps {
   folders: TravelFolder[];
   onClose: () => void;
   onSaveExpenses: (expenses: ExpenseItem[]) => Promise<void>;
-  onSaveFolderTrips: (folderId: string, trips: Trip[]) => Promise<void>;
+  onSaveFolderTrips: (folder: TravelFolder) => Promise<void>;
   onSaveTrip: (trip: Trip) => Promise<void>;
   target: EditTarget;
   trip: Trip;
@@ -69,8 +69,8 @@ export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSa
         <FolderTripsForm
           folder={folders.find((folder) => folder.id === target.folderId) ?? folders[0]}
           isSaving={isSaving}
-          onSubmit={(folderId, trips) =>
-            save(setIsSaving, setError, setMessage, () => onSaveFolderTrips(folderId, trips))
+          onSubmit={(folder) =>
+            save(setIsSaving, setError, setMessage, () => onSaveFolderTrips(folder))
           }
         />
       )}
@@ -160,6 +160,7 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
   const [startDate, setStartDate] = useState(trip.startDate);
   const [endDate, setEndDate] = useState(trip.endDate);
   const [status, setStatus] = useState<Trip["status"]>(trip.status);
+  const [imageUrl, setImageUrl] = useState(trip.imageUrl ?? "");
   const [notes, setNotes] = useState(trip.notes ?? "");
 
   useEffect(() => {
@@ -168,18 +169,29 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
     setStartDate(trip.startDate);
     setEndDate(trip.endDate);
     setStatus(trip.status);
+    setImageUrl(trip.imageUrl ?? "");
     setNotes(trip.notes ?? "");
   }, [trip]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSubmit({ ...trip, title, description, startDate, endDate, status, notes: notes || undefined });
+    onSubmit({
+      ...trip,
+      title,
+      description,
+      startDate,
+      endDate,
+      status,
+      imageUrl: imageUrl.trim() || undefined,
+      notes: notes || undefined,
+    });
   }
 
   return (
     <form className="editor-form" onSubmit={handleSubmit}>
       <label>Titre<input onChange={(event) => setTitle(event.target.value)} required value={title} /></label>
       <label>Description<textarea onChange={(event) => setDescription(event.target.value)} required value={description} /></label>
+      <label>Image du voyage<input onChange={(event) => setImageUrl(event.target.value)} placeholder="https://..." type="url" value={imageUrl} /></label>
       <div className="form-row">
         <label>Debut<input onChange={(event) => setStartDate(event.target.value)} required type="date" value={startDate} /></label>
         <label>Fin<input onChange={(event) => setEndDate(event.target.value)} required type="date" value={endDate} /></label>
@@ -254,6 +266,7 @@ function normalizeTripForSave(trip: Trip, folderId: string): Trip {
     folderId,
     title: cleanTitle,
     description: trip.description.trim() || "Description a completer.",
+    imageUrl: trip.imageUrl?.trim() || undefined,
     notes: trip.notes?.trim() || undefined,
     stats: trip.stats.filter((stat) => stat.value.trim() && stat.label.trim()),
     steps: trip.steps.map((step) => ({
@@ -273,12 +286,14 @@ function FolderTripsForm({
 }: {
   folder: TravelFolder;
   isSaving: boolean;
-  onSubmit: (folderId: string, trips: Trip[]) => void;
+  onSubmit: (folder: TravelFolder) => void;
 }) {
+  const [folderLabel, setFolderLabel] = useState(folder.label);
   const [draftTrips, setDraftTrips] = useState<Trip[]>(folder.trips);
   const [editingId, setEditingId] = useState(folder.trips[0]?.id ?? "");
 
   useEffect(() => {
+    setFolderLabel(folder.label);
     setDraftTrips(folder.trips);
     setEditingId((current) => (folder.trips.some((trip) => trip.id === current) ? current : folder.trips[0]?.id ?? ""));
   }, [folder]);
@@ -323,6 +338,10 @@ function FolderTripsForm({
 
   return (
     <div className="editor-form">
+      <label>
+        Nom du dossier
+        <input onChange={(event) => setFolderLabel(event.target.value)} required value={folderLabel} />
+      </label>
       <div className="trip-manager-toolbar">
         <button className="plain-btn icon-text-btn" onClick={addTrip} type="button">
           <Plus aria-hidden="true" size={16} />
@@ -367,10 +386,16 @@ function FolderTripsForm({
       <button
         className="primary-btn"
         disabled={isSaving}
-        onClick={() => onSubmit(folder.id, draftTrips.map((draftTrip) => normalizeTripForSave(draftTrip, folder.id)))}
+        onClick={() =>
+          onSubmit({
+            ...folder,
+            label: folderLabel.trim() || folder.label,
+            trips: draftTrips.map((draftTrip) => normalizeTripForSave(draftTrip, folder.id)),
+          })
+        }
         type="button"
       >
-        Sauvegarder la liste
+        Sauvegarder le dossier
       </button>
     </div>
   );

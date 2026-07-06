@@ -72,6 +72,7 @@ const tripSchema = z.object({
   steps: z.array(tripStepSchema),
   bookings: z.array(bookingTaskSchema),
   documents: z.array(documentLinkSchema),
+  imageUrl: z.string().url().optional(),
   notes: z.string().optional(),
   deletedAt: z.string().optional(),
 });
