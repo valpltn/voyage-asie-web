@@ -174,6 +174,26 @@ export function mergeExpensesWithLocal(remoteExpenses: ExpenseItem[]) {
   return Array.from(expenses.values());
 }
 
+function isMissingDeletedAtError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; message?: string };
+  const message = candidate.message?.toLowerCase() ?? "";
+  return candidate.code === "PGRST204" || (message.includes("deleted_at") && message.includes("schema"));
+}
+
+async function loadExpenseRows() {
+  if (!supabase) return [];
+  const result = await supabase
+    .from("expenses")
+    .select("id,trip_id,label,category,kind,amount,currency,date,notes,deleted_at");
+  if (!result.error) return result.data ?? [];
+  if (!isMissingDeletedAtError(result.error)) throw result.error;
+
+  const fallbackResult = await supabase.from("expenses").select("id,trip_id,label,category,kind,amount,currency,date,notes");
+  if (fallbackResult.error) throw fallbackResult.error;
+  return fallbackResult.data ?? [];
+}
+
 export async function getCurrentUser() {
   if (!supabase) return null;
   const { data, error } = await supabase.auth.getUser();
@@ -228,16 +248,14 @@ export async function loadTravelData(includePrivate: boolean): Promise<TravelDat
     .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,notes,is_public,sort_order")
     .order("sort_order", { ascending: true });
 
-  const [foldersResult, tripsResult, expensesResult] = await Promise.all([
+  const [foldersResult, tripsResult, expenseRows] = await Promise.all([
     includePrivate ? folderQuery : folderQuery.eq("is_public", true),
     includePrivate ? tripQuery : tripQuery.eq("is_public", true),
-    includePrivate
-      ? supabase.from("expenses").select("id,trip_id,label,category,kind,amount,currency,date,notes,deleted_at")
-      : Promise.resolve({ data: [], error: null }),
+    includePrivate ? loadExpenseRows() : Promise.resolve([]),
   ]);
 
-  if (foldersResult.error || tripsResult.error || expensesResult.error) {
-    throw foldersResult.error ?? tripsResult.error ?? expensesResult.error;
+  if (foldersResult.error || tripsResult.error) {
+    throw foldersResult.error ?? tripsResult.error;
   }
 
   const tripsByFolder = new Map<string, Trip[]>();
@@ -254,7 +272,7 @@ export async function loadTravelData(includePrivate: boolean): Promise<TravelDat
     }))
     .filter((folder) => folder.trips.length > 0 || includePrivate);
 
-  const remoteExpenses = ((expensesResult.data ?? []) as ExpenseRow[]).map(rowToExpense);
+  const remoteExpenses = (expenseRows as ExpenseRow[]).map(rowToExpense);
 
   return {
     source: "supabase",
@@ -286,23 +304,23 @@ export async function saveFolder(folder: TravelFolder, ownerId: string) {
 
 export async function saveExpense(expense: ExpenseItem, ownerId: string) {
   if (!supabase) throw new Error("Supabase n'est pas configure.");
-  const { error } = await supabase.from("expenses").upsert(
-    {
-      id: expense.id,
-      owner_id: ownerId,
-      trip_id: expense.tripId ?? null,
-      label: expense.label,
-      category: expense.category,
-      kind: expense.kind,
-      amount: expense.amount,
-      currency: expense.currency,
-      date: expense.date ?? null,
-      notes: expense.notes ?? null,
-      deleted_at: null,
-    },
-    { onConflict: "id" },
-  );
-  if (error) throw error;
+  const row = {
+    id: expense.id,
+    owner_id: ownerId,
+    trip_id: expense.tripId ?? null,
+    label: expense.label,
+    category: expense.category,
+    kind: expense.kind,
+    amount: expense.amount,
+    currency: expense.currency,
+    date: expense.date ?? null,
+    notes: expense.notes ?? null,
+  };
+  const { error } = await supabase.from("expenses").upsert({ ...row, deleted_at: null }, { onConflict: "id" });
+  if (!error) return;
+  if (!isMissingDeletedAtError(error)) throw error;
+  const fallbackResult = await supabase.from("expenses").upsert(row, { onConflict: "id" });
+  if (fallbackResult.error) throw fallbackResult.error;
 }
 
 export async function deleteExpense(expense: ExpenseItem, ownerId: string) {
@@ -323,7 +341,13 @@ export async function deleteExpense(expense: ExpenseItem, ownerId: string) {
     },
     { onConflict: "id" },
   );
-  if (error) throw error;
+  if (!error) return;
+  if (!isMissingDeletedAtError(error)) throw error;
+  if (localExpenseItems.some((localExpense) => localExpense.id === expense.id)) {
+    throw new Error("Migration Supabase requise: ajoute la colonne expenses.deleted_at pour supprimer une depense locale.");
+  }
+  const fallbackResult = await supabase.from("expenses").delete().eq("id", expense.id);
+  if (fallbackResult.error) throw fallbackResult.error;
 }
 
 export async function saveExpenseList(previousExpenses: ExpenseItem[], nextExpenses: ExpenseItem[], ownerId: string) {
