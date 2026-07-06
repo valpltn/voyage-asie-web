@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ExpensesOverview } from "./ExpensesOverview";
 import type { ExpenseItem, TravelFolder } from "../lib/types";
@@ -65,7 +65,7 @@ describe("ExpensesOverview", () => {
   it("hides edit action when no admin edit handler is provided", () => {
     render(<ExpensesOverview expenses={expenses} folders={folders} />);
 
-    expect(screen.queryByRole("button", { name: "Modifier les depenses" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ajouter / editer" })).not.toBeInTheDocument();
   });
 
   it("filters expenses by selected trip and type", () => {
@@ -77,19 +77,18 @@ describe("ExpensesOverview", () => {
     fireEvent.change(screen.getByLabelText("Voyage"), { target: { value: "trip-a" } });
     expect(screen.queryByText("Hotel")).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getAllByLabelText(/Type/)[0], { target: { value: "actual" } });
+    fireEvent.change(screen.getByLabelText(/Categorie/), { target: { value: "actual" } });
     expect(screen.queryByText("Train")).not.toBeInTheDocument();
     expect(screen.queryByText("Hotel")).not.toBeInTheDocument();
   });
 
-  it("sorts visible expenses by amount", () => {
+  it("renders a pie chart breakdown with hover titles", () => {
     render(<ExpensesOverview expenses={expenses} folders={folders} />);
 
     fireEvent.change(screen.getByLabelText("Voyage"), { target: { value: "all" } });
-    fireEvent.change(screen.getByLabelText(/Tri/), { target: { value: "amount-desc" } });
 
-    const rows = screen.getAllByText(/Train|Hotel/).map((item) => within(item.closest(".expense-row") as HTMLElement));
-    expect(rows[0].getByText("Hotel")).toBeInTheDocument();
-    expect(rows[1].getByText("Train")).toBeInTheDocument();
+    expect(screen.getByText("Repartition")).toBeInTheDocument();
+    expect(screen.getAllByTitle(/Transport: 28\.6%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/Hebergement: 71\.4%/).length).toBeGreaterThan(0);
   });
 });

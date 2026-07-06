@@ -194,48 +194,4 @@ export const weekendTripsFolder: TravelFolder = {
   trips: weekendSeeds.map(createWeekendTrip),
 };
 
-export const weekendExpenseItems: ExpenseItem[] = weekendSeeds.flatMap((seed) => {
-  const tripId = `weekend-${slugify(seed.city)}-2026`;
-  return [
-    {
-      id: `${tripId}-expense-flight`,
-      tripId,
-      label: `Transport ${seed.departureAirport} -> ${seed.city}`,
-      category: "Transport",
-      kind: "planned",
-      amount: parseBudget(seed.flightBudget),
-      currency: "EUR",
-      date: seed.startDate,
-    },
-    {
-      id: `${tripId}-expense-lodging`,
-      tripId,
-      label: `Logement ${seed.city}`,
-      category: "Hebergement",
-      kind: "planned",
-      amount: parseBudget(seed.lodgingBudget),
-      currency: "EUR",
-      date: seed.startDate,
-    },
-    {
-      id: `${tripId}-expense-daily`,
-      tripId,
-      label: `Budget quotidien ${seed.city}`,
-      category: "Vie sur place",
-      kind: "planned",
-      amount: parseBudget(seed.dailyBudget),
-      currency: "EUR",
-      date: seed.startDate,
-    },
-    {
-      id: `${tripId}-expense-activities`,
-      tripId,
-      label: `Activites ${seed.city}`,
-      category: "Activites",
-      kind: "planned",
-      amount: parseBudget(seed.activityBudget),
-      currency: "EUR",
-      date: seed.startDate,
-    },
-  ];
-});
+export const weekendExpenseItems: ExpenseItem[] = [];

@@ -241,19 +241,7 @@ export const coreTravelFolders: TravelFolder[] = [
   },
 ];
 
-export const travelExpenseItems: ExpenseItem[] = [
-  {
-    id: "voyage-chine-vol-aller-canton",
-    tripId: "sud-chine-tainan-2026",
-    label: "Vol aller vers Canton",
-    category: "Vols",
-    kind: "actual",
-    amount: 424,
-    currency: "EUR",
-    date: "2026-08-17",
-    notes: "Vol CDG -> PEK -> CAN.",
-  },
-];
+export const travelExpenseItems: ExpenseItem[] = [];
 
 export const weekendSeeds: WeekendSeed[] = [
   {

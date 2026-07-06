@@ -515,7 +515,7 @@ function ExpensesForm({
                   </div>
                   <div className="form-row">
                     <label>
-                      Categorie
+                      Section
                       <select
                         onChange={(event) => updateExpense(expense.id, { ...expense, category: event.target.value })}
                         value={expense.category}

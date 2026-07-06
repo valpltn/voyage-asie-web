@@ -1064,6 +1064,10 @@ h1 {
   grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(160px, 1fr));
 }
 
+.expense-filterbar.compact {
+  grid-template-columns: minmax(220px, 340px) minmax(180px, 240px);
+}
+
 .expense-summary article,
 .expense-card {
   border: 1px solid var(--line);
@@ -1110,87 +1114,142 @@ h1 {
   margin-bottom: 12px;
 }
 
-.expense-visual-card {
-  margin-bottom: 14px;
+.expense-split-layout {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
 }
 
-.segmented-control {
+.expense-left-pane {
+  min-width: 0;
+}
+
+.expense-pie-panel {
+  position: sticky;
+  top: 78px;
+}
+
+.expense-pie-card {
+  display: grid;
+  gap: 16px;
+}
+
+.expense-accordion-list {
+  display: grid;
+  gap: 10px;
+}
+
+.expense-section {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.68);
-  display: inline-flex;
-  gap: 3px;
-  padding: 3px;
+  background: rgba(251, 255, 248, 0.92);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
 }
 
-.segmented-control button {
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 850;
-  min-height: 32px;
-  padding: 7px 10px;
-}
-
-.segmented-control button.active {
-  background: var(--accent-strong);
-  color: #fff;
-}
-
-.expense-bars {
-  display: grid;
-  gap: 12px;
-}
-
-.expense-bar-row {
-  display: grid;
-  gap: 7px;
-}
-
-.expense-bar-label,
-.expense-bar-meta {
+.expense-section summary {
   align-items: center;
+  cursor: pointer;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: space-between;
+  list-style: none;
+  padding: 14px 16px;
 }
 
-.expense-bar-label strong {
+.expense-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.expense-section summary::before {
+  color: var(--accent-strong);
+  content: "+";
+  font-weight: 900;
+}
+
+.expense-section[open] summary::before {
+  content: "-";
+}
+
+.expense-section summary span {
+  flex: 1;
+  font-weight: 900;
+}
+
+.expense-section .expense-table {
+  padding: 0 16px 14px;
+}
+
+.expense-pie-wrap {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+}
+
+.expense-pie {
+  border: 10px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(24, 53, 43, 0.08), var(--shadow-soft);
+  height: min(280px, 70vw);
+  position: relative;
+  width: min(280px, 70vw);
+}
+
+.expense-pie::after {
+  background: rgba(251, 255, 248, 0.96);
+  border-radius: 50%;
+  content: "";
+  inset: 34%;
+  position: absolute;
+}
+
+.expense-pie > span {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: help;
+  display: inline-block;
+  height: 14px;
+  margin: 3px;
+  position: relative;
+  width: 14px;
+  z-index: 2;
+}
+
+.expense-pie-empty {
+  color: var(--muted);
+  font-weight: 800;
+  margin: 0;
+}
+
+.expense-pie-legend {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.expense-pie-legend div {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.expense-pie-legend span {
+  border-radius: 50%;
+  height: 12px;
+  width: 12px;
+}
+
+.expense-pie-legend strong {
   overflow-wrap: anywhere;
 }
 
-.expense-bar-label span,
-.expense-bar-meta span {
+.expense-pie-legend em {
   color: var(--muted);
   font-size: 0.82rem;
-  font-weight: 750;
-}
-
-.expense-bar-track {
-  border-radius: 999px;
-  background: rgba(215, 228, 210, 0.72);
-  display: grid;
-  gap: 3px;
-  min-height: 22px;
-  overflow: hidden;
-  padding: 3px;
-}
-
-.expense-bar {
-  border-radius: 999px;
-  display: block;
-  min-height: 7px;
-}
-
-.expense-bar.planned {
-  background: var(--sun);
-}
-
-.expense-bar.actual {
-  background: var(--accent-strong);
+  font-style: normal;
+  font-weight: 850;
 }
 
 .expense-table {
@@ -1427,6 +1486,14 @@ h1 {
   .expense-filterbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .expense-split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-pie-panel {
+    position: static;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1632,6 +1699,13 @@ h1 {
     align-items: start;
     grid-template-columns: 1fr;
     gap: 5px;
+  }
+
+  .expense-header,
+  .expense-card-heading,
+  .expense-section summary {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
