@@ -1,6 +1,5 @@
 import type { AuthChangeEvent, User } from "@supabase/supabase-js";
-import { expenseItems as localExpenseItems } from "../data/expenses";
-import { travelFolders as localTravelFolders } from "../data/travelData";
+import { localDatabase } from "../data/localDatabase";
 import type { ExpenseItem, TravelFolder, Trip } from "./types";
 import { validateTravelFolders } from "./validation";
 import { isSupabaseConfigured, supabase } from "./supabase";
@@ -123,12 +122,12 @@ function localData(includePrivate = true): TravelDataResult {
   return {
     source: "local",
     folders: includePrivate
-      ? localTravelFolders
-      : localTravelFolders.map((folder) => ({
+      ? localDatabase.folders
+      : localDatabase.folders.map((folder) => ({
           ...folder,
           trips: folder.trips.map(sanitizeTripForPublic),
         })),
-    expenses: includePrivate ? localExpenseItems : [],
+    expenses: includePrivate ? localDatabase.expenses : [],
   };
 }
 
@@ -138,7 +137,7 @@ export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePriv
     remoteFolders.flatMap((folder) => folder.trips.filter((trip) => trip.deletedAt).map((trip) => trip.id)),
   );
 
-  for (const localFolder of localTravelFolders) {
+  for (const localFolder of localDatabase.folders) {
     folders.set(localFolder.id, {
       ...localFolder,
       trips: localFolder.trips
@@ -170,11 +169,12 @@ export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePriv
     });
   }
 
-  return validateTravelFolders(Array.from(folders.values()));
+  const mergedFolders = Array.from(folders.values()).filter((folder) => folder.trips.length > 0 || includePrivate);
+  return mergedFolders.length > 0 ? validateTravelFolders(mergedFolders) : localData(includePrivate).folders;
 }
 
 export function mergeExpensesWithLocal(remoteExpenses: ExpenseItem[]) {
-  const expenses = new Map(localExpenseItems.map((expense) => [expense.id, expense]));
+  const expenses = new Map(localDatabase.expenses.map((expense) => [expense.id, expense]));
   for (const remoteExpense of remoteExpenses) {
     if (remoteExpense.deletedAt) {
       expenses.delete(remoteExpense.id);
@@ -283,9 +283,17 @@ export async function loadTravelData(includePrivate: boolean): Promise<TravelDat
 
   return {
     source: "supabase",
-    folders: mergeFoldersWithLocal(remoteFolders, includePrivate),
+    folders: ensureFolders(mergeFoldersWithLocal(remoteFolders, includePrivate), includePrivate),
     expenses: includePrivate ? mergeExpensesWithLocal(remoteExpenses) : [],
   };
+}
+
+export function getLocalTravelData(includePrivate = true): TravelDataResult {
+  return localData(includePrivate);
+}
+
+function ensureFolders(folders: TravelFolder[], includePrivate: boolean) {
+  return folders.length > 0 ? folders : localData(includePrivate).folders;
 }
 
 async function loadRemoteFolders(includePrivate: boolean) {
@@ -337,7 +345,7 @@ export async function deleteTrip(trip: Trip, ownerId: string) {
   );
   if (!error) return;
   if (!isMissingDeletedAtError(error)) throw error;
-  if (localTravelFolders.some((folder) => folder.trips.some((localTrip) => localTrip.id === trip.id))) {
+  if (localDatabase.folders.some((folder) => folder.trips.some((localTrip) => localTrip.id === trip.id))) {
     throw new Error("Migration Supabase requise: ajoute la colonne trips.deleted_at pour supprimer un voyage local.");
   }
   const fallbackResult = await supabase.from("trips").delete().eq("id", trip.id);
@@ -425,7 +433,7 @@ export async function deleteExpense(expense: ExpenseItem, ownerId: string) {
   );
   if (!error) return;
   if (!isMissingDeletedAtError(error)) throw error;
-  if (localExpenseItems.some((localExpense) => localExpense.id === expense.id)) {
+  if (localDatabase.expenses.some((localExpense) => localExpense.id === expense.id)) {
     throw new Error("Migration Supabase requise: ajoute la colonne expenses.deleted_at pour supprimer une depense locale.");
   }
   const fallbackResult = await supabase.from("expenses").delete().eq("id", expense.id);

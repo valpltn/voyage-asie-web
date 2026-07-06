@@ -17,6 +17,7 @@ import { formatDateRange } from "./lib/format";
 import {
   getCurrentProfile,
   getCurrentUser,
+  getLocalTravelData,
   loadTravelData,
   onAuthStateChange,
   saveExpenseList,
@@ -78,22 +79,32 @@ export function App() {
     setLoadError(null);
     try {
       const result = await loadTravelData(includePrivate);
-      setTravelFolders(result.folders);
-      setExpenseItems(result.expenses);
-      setDataSource(result.source);
-      const nextFolder = result.folders[0];
+      const safeResult = result.folders.length > 0 ? result : getLocalTravelData(includePrivate);
+      setTravelFolders(safeResult.folders);
+      setExpenseItems(safeResult.expenses);
+      setDataSource(safeResult.source);
+      const nextFolder = safeResult.folders[0];
       const nextTrip = nextFolder?.trips[0];
-      setActiveFolderId((current) => result.folders.some((folder) => folder.id === current) ? current : nextFolder?.id ?? "");
+      setActiveFolderId((current) => safeResult.folders.some((folder) => folder.id === current) ? current : nextFolder?.id ?? "");
       setActiveTripId((current) =>
-        result.folders.some((folder) => folder.trips.some((trip) => trip.id === current)) ? current : nextTrip?.id ?? "",
+        safeResult.folders.some((folder) => folder.trips.some((trip) => trip.id === current)) ? current : nextTrip?.id ?? "",
       );
       setSelectedStepId((current) =>
-        result.folders.some((folder) => folder.trips.some((trip) => trip.steps.some((step) => step.id === current)))
+        safeResult.folders.some((folder) => folder.trips.some((trip) => trip.steps.some((step) => step.id === current)))
           ? current
           : nextTrip?.steps[0]?.id ?? "",
       );
     } catch (caught) {
       setLoadError(caught instanceof Error ? caught.message : "Chargement impossible.");
+      const fallback = getLocalTravelData(includePrivate);
+      setTravelFolders(fallback.folders);
+      setExpenseItems(fallback.expenses);
+      setDataSource(fallback.source);
+      const nextFolder = fallback.folders[0];
+      const nextTrip = nextFolder?.trips[0];
+      setActiveFolderId(nextFolder?.id ?? "");
+      setActiveTripId(nextTrip?.id ?? "");
+      setSelectedStepId(nextTrip?.steps[0]?.id ?? "");
     } finally {
       setIsLoading(false);
     }

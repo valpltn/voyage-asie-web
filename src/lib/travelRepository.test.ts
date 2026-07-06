@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Trip } from "./types";
-import { mergeExpensesWithLocal, mergeFoldersWithLocal, sanitizeTripForPublic } from "./travelRepository";
+import { getLocalTravelData, mergeExpensesWithLocal, mergeFoldersWithLocal, sanitizeTripForPublic } from "./travelRepository";
 
 const trip: Trip = {
   id: "test-trip",
@@ -119,5 +119,14 @@ describe("public travel data sanitization", () => {
     const weekendFolder = folders.find((folder) => folder.id === "weekends-depuis-taiwan");
 
     expect(weekendFolder?.trips.find((item) => item.id === "weekend-seoul-2026")).toBeUndefined();
+  });
+
+  it("keeps the local database snapshot available as a non-empty fallback", () => {
+    const local = getLocalTravelData(false);
+    const merged = mergeFoldersWithLocal([], false);
+
+    expect(local.folders.length).toBeGreaterThan(0);
+    expect(merged.length).toBeGreaterThan(0);
+    expect(merged.some((folder) => folder.trips.length > 0)).toBe(true);
   });
 });
