@@ -27,6 +27,7 @@ interface TripRow {
   notes?: string | null;
   is_public: boolean;
   sort_order: number;
+  deleted_at?: string | null;
 }
 
 interface ExpenseRow {
@@ -77,6 +78,7 @@ function rowToTrip(row: TripRow, includePrivate: boolean): Trip {
     documents: row.documents ?? [],
     imageUrl: row.image_url ?? undefined,
     notes: row.notes ?? undefined,
+    deletedAt: row.deleted_at ?? undefined,
   };
 
   return includePrivate ? trip : sanitizeTripForPublic(trip);
@@ -132,11 +134,16 @@ function localData(includePrivate = true): TravelDataResult {
 
 export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePrivate: boolean) {
   const folders = new Map<string, TravelFolder>();
+  const deletedTripIds = new Set(
+    remoteFolders.flatMap((folder) => folder.trips.filter((trip) => trip.deletedAt).map((trip) => trip.id)),
+  );
 
   for (const localFolder of localDatabase.folders) {
     folders.set(localFolder.id, {
       ...localFolder,
-      trips: localFolder.trips.map((trip) => (includePrivate ? trip : sanitizeTripForPublic(trip))),
+      trips: localFolder.trips
+        .filter((trip) => !deletedTripIds.has(trip.id))
+        .map((trip) => (includePrivate ? trip : sanitizeTripForPublic(trip))),
     });
   }
 
@@ -149,6 +156,10 @@ export function mergeFoldersWithLocal(remoteFolders: TravelFolder[], includePriv
 
     const trips = new Map(existingFolder.trips.map((trip) => [trip.id, trip]));
     for (const remoteTrip of remoteFolder.trips) {
+      if (remoteTrip.deletedAt) {
+        trips.delete(remoteTrip.id);
+        continue;
+      }
       trips.set(remoteTrip.id, remoteTrip);
     }
 
@@ -189,11 +200,11 @@ async function loadTripRows(includePrivate: boolean) {
   if (!supabase) return [];
   const query = supabase
     .from("trips")
-    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,image_url,notes,is_public,sort_order")
+    .select("id,folder_id,title,description,start_date,end_date,status,stats,steps,bookings,documents,image_url,notes,is_public,sort_order,deleted_at")
     .order("sort_order", { ascending: true });
   const result = await (includePrivate ? query : query.eq("is_public", true));
   if (!result.error) return result.data ?? [];
-  if (!isMissingColumnError(result.error, "image_url")) throw result.error;
+  if (!isMissingColumnError(result.error, "image_url") && !isMissingColumnError(result.error, "deleted_at")) throw result.error;
 
   const fallbackQuery = supabase
     .from("trips")
@@ -312,18 +323,27 @@ async function loadRemoteFolders(includePrivate: boolean) {
 export async function saveTrip(trip: Trip, ownerId: string, isPublic = true) {
   if (!supabase) throw new Error("Supabase n'est pas configure.");
   validateTravelFolders([{ id: trip.folderId, label: "Validation", trips: [trip] }]);
-  const { error } = await supabase.from("trips").upsert(tripToRow(trip, ownerId, isPublic), { onConflict: "id" });
+  const { error } = await supabase.from("trips").upsert({ ...tripToRow(trip, ownerId, isPublic), deleted_at: null }, { onConflict: "id" });
   if (!error) return;
-  if (!isMissingColumnError(error, "image_url")) throw error;
-  const { image_url: _imageUrl, ...fallbackRow } = tripToRow(trip, ownerId, isPublic);
+  if (!isMissingColumnError(error, "image_url") && !isMissingColumnError(error, "deleted_at")) throw error;
+  const { image_url: _imageUrl, deleted_at: _deletedAt, ...fallbackRow } = { ...tripToRow(trip, ownerId, isPublic), deleted_at: null };
   const fallbackResult = await supabase.from("trips").upsert(fallbackRow, { onConflict: "id" });
   if (fallbackResult.error) throw fallbackResult.error;
 }
 
-export async function deleteTrip(trip: Trip, _ownerId: string) {
+export async function deleteTrip(trip: Trip, ownerId: string) {
   if (!supabase) throw new Error("Supabase n'est pas configure.");
-  const { error } = await supabase.from("trips").delete().eq("id", trip.id);
-  if (error) throw error;
+  const { error } = await supabase.from("trips").upsert(
+    { ...tripToRow(trip, ownerId, true), deleted_at: new Date().toISOString() },
+    { onConflict: "id" },
+  );
+  if (!error) return;
+  if (!isMissingColumnError(error, "deleted_at")) throw error;
+  if (localDatabase.folders.some((folder) => folder.trips.some((localTrip) => localTrip.id === trip.id))) {
+    throw new Error("Migration Supabase requise: ajoute la colonne trips.deleted_at pour supprimer un voyage local.");
+  }
+  const fallbackResult = await supabase.from("trips").delete().eq("id", trip.id);
+  if (fallbackResult.error) throw fallbackResult.error;
 }
 
 export async function saveTripList(previousTrips: Trip[], nextTrips: Trip[], ownerId: string) {

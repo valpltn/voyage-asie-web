@@ -105,4 +105,28 @@ describe("public travel data sanitization", () => {
     expect(merged.length).toBeGreaterThan(0);
     expect(merged.some((folder) => folder.trips.length > 0)).toBe(true);
   });
+
+  it("hides a bundled trip when Supabase contains a soft-delete", () => {
+    const folders = mergeFoldersWithLocal(
+      [
+        {
+          id: "weekends-depuis-taiwan",
+          label: "Weekends depuis Taiwan",
+          trips: [
+            {
+              ...trip,
+              id: "weekend-osaka-2026",
+              folderId: "weekends-depuis-taiwan",
+              deletedAt: "2026-07-06T10:00:00.000Z",
+            },
+          ],
+        },
+      ],
+      true,
+    );
+
+    const weekendFolder = folders.find((folder) => folder.id === "weekends-depuis-taiwan");
+
+    expect(weekendFolder?.trips.find((item) => item.id === "weekend-osaka-2026")).toBeUndefined();
+  });
 });
