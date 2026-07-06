@@ -86,7 +86,7 @@ export function App() {
       })
       .catch((caught) => {
         setLoadError(caught instanceof Error ? caught.message : "Initialisation impossible.");
-        setIsLoading(false);
+        void refreshTravelData(false);
       });
 
     return onAuthStateChange((nextUser, event) => {

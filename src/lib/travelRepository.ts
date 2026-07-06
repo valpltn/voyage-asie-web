@@ -120,7 +120,11 @@ function localData(): TravelDataResult {
 export async function getCurrentUser() {
   if (!supabase) return null;
   const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("session") && message.includes("missing")) return null;
+    throw error;
+  }
   return data.user;
 }
 
