@@ -128,8 +128,8 @@ export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: Ex
           <strong>{euroFormatter.format(actualTotal)}</strong>
         </article>
         <article>
-          <span>Reste / ecart</span>
-          <strong>{euroFormatter.format(plannedTotal - actualTotal)}</strong>
+          <span>Total</span>
+          <strong>{euroFormatter.format(total)}</strong>
         </article>
         <article>
           <span>Lignes</span>
