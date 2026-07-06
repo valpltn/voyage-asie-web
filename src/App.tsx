@@ -62,6 +62,16 @@ export function App() {
 
   const [selectedStepId, setSelectedStepId] = useState("");
 
+  async function resolveIsAdmin(currentUser: User | null) {
+    if (!currentUser) return false;
+    try {
+      const profile = await getCurrentProfile(currentUser.id);
+      return Boolean(profile?.isAdmin);
+    } catch {
+      return false;
+    }
+  }
+
   const refreshTravelData = useCallback(async (includePrivate = false) => {
     setIsLoading(true);
     setLoadError(null);
@@ -92,8 +102,7 @@ export function App() {
     getCurrentUser()
       .then(async (currentUser) => {
         setUser(currentUser);
-        const profile = currentUser ? await getCurrentProfile(currentUser.id) : null;
-        setIsAdmin(Boolean(profile?.isAdmin));
+        setIsAdmin(await resolveIsAdmin(currentUser));
         return refreshTravelData(Boolean(currentUser));
       })
       .catch((caught) => {
@@ -107,8 +116,7 @@ export function App() {
       setIsAdmin(false);
       setShowLogin(false);
       void (async () => {
-        const profile = nextUser ? await getCurrentProfile(nextUser.id) : null;
-        setIsAdmin(Boolean(profile?.isAdmin));
+        setIsAdmin(await resolveIsAdmin(nextUser));
         await refreshTravelData(Boolean(nextUser));
       })();
     });
