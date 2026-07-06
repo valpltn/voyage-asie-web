@@ -35,7 +35,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -51,7 +52,33 @@ a {
 .shell {
   width: min(1480px, calc(100vw - 32px));
   margin: 0 auto;
-  padding: 22px 0 28px;
+  padding: 72px 0 28px;
+}
+
+.top-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  position: fixed;
+  right: max(16px, calc((100vw - 1480px) / 2));
+  top: 14px;
+  z-index: 900;
+}
+
+.top-actions span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(251, 255, 248, 0.9);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.top-actions .warning-text {
+  color: var(--danger);
 }
 
 .topbar {
@@ -191,10 +218,16 @@ h1 {
   text-align: left;
   transform-origin: left center;
   transition:
-    flex-basis 360ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 160ms ease,
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    flex-basis 720ms cubic-bezier(0.22, 1, 0.36, 1) 120ms,
+    opacity 260ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: flex-basis;
+}
+
+.destination-card::before {
+  content: "";
+  inset: -8px -16px -8px 0;
+  position: absolute;
 }
 
 .destination-card:nth-child(1) {
@@ -233,12 +266,11 @@ h1 {
   --card-index: 8;
 }
 
-.destination-card:hover,
-.destination-card:has(.destination-photo:hover),
-.destination-card:focus-visible,
-.destination-card.active {
+.destination-card.expanded,
+.destination-card:focus-visible {
   --card-width: var(--card-expanded-width);
   transform: translateY(-5px);
+  transition-delay: 0ms;
 }
 
 .destination-photo {
@@ -252,9 +284,9 @@ h1 {
   transform-origin: left center;
   width: 100%;
   transition:
-    box-shadow 260ms ease,
-    filter 260ms ease,
-    transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow 420ms ease,
+    filter 420ms ease,
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .destination-photo::after {
@@ -264,10 +296,8 @@ h1 {
   position: absolute;
 }
 
-.destination-card:hover .destination-photo,
-.destination-card:has(.destination-photo:hover) .destination-photo,
-.destination-card:focus-visible .destination-photo,
-.destination-card.active .destination-photo {
+.destination-card.expanded .destination-photo,
+.destination-card:focus-visible .destination-photo {
   box-shadow: 0 16px 34px rgba(29, 63, 48, 0.18);
   filter: saturate(1.08) contrast(1.02);
 }
@@ -277,8 +307,8 @@ h1 {
   gap: 3px;
   padding: 0 8px;
   transition:
-    opacity 220ms ease,
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 360ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .destination-card .destination-content span {
@@ -286,8 +316,7 @@ h1 {
   transform: translateY(-2px);
 }
 
-.destination-card:hover .destination-content span,
-.destination-card.active .destination-content span,
+.destination-card.expanded .destination-content span,
 .destination-card:focus-visible .destination-content span {
   opacity: 1;
   transform: translateY(0);
@@ -309,8 +338,8 @@ h1 {
   line-height: 1.35;
   order: 2;
   transition:
-    opacity 220ms ease,
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 360ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .destination-content .destination-meta {
@@ -416,6 +445,302 @@ h1 {
   flex-wrap: wrap;
   gap: 8px;
   margin: 0 0 14px;
+}
+
+.session-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.session-bar span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.session-bar .warning-text {
+  color: var(--danger);
+}
+
+.plain-btn,
+.primary-btn,
+.icon-btn {
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 850;
+  min-height: 40px;
+  padding: 9px 13px;
+}
+
+.plain-btn {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--ink);
+}
+
+.primary-btn {
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.icon-btn {
+  align-items: center;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink);
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0;
+  width: 38px;
+}
+
+.icon-text-btn {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.editable-region {
+  position: relative;
+}
+
+.edit-btn {
+  box-shadow: 0 10px 22px rgba(29, 63, 48, 0.12);
+  opacity: 0.92;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 20;
+}
+
+.editable-region:hover .edit-btn,
+.edit-btn:focus-visible {
+  opacity: 1;
+}
+
+.topbar > .editable-region .edit-btn {
+  right: 0;
+  top: 0;
+}
+
+.view-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.edit-panel {
+  border-left: 1px solid var(--line);
+  background: rgba(251, 255, 248, 0.98);
+  box-shadow: -20px 0 50px rgba(29, 63, 48, 0.16);
+  display: grid;
+  gap: 14px;
+  height: 100vh;
+  overflow: auto;
+  padding: 18px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: min(520px, 100vw);
+  z-index: 1000;
+}
+
+.edit-panel-header {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.edit-panel-header h2 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.editor-form {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-form label {
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.editor-form input,
+.editor-form select,
+.editor-form textarea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  padding: 10px 12px;
+  text-transform: none;
+  width: 100%;
+}
+
+.editor-form textarea {
+  line-height: 1.45;
+  min-height: 110px;
+  resize: vertical;
+}
+
+.editor-form .json-editor {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.8rem;
+  min-height: 420px;
+}
+
+.editor-copy {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.editor-list {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.editor-item-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.editor-item-header strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.auth-panel,
+.admin-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(251, 255, 248, 0.96);
+  box-shadow: var(--shadow-soft);
+  margin: 0 0 16px;
+  padding: 18px;
+}
+
+.auth-panel > div,
+.admin-heading {
+  align-items: start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.auth-panel h2,
+.admin-heading h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.admin-heading p {
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 14px;
+}
+
+.admin-form {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-form h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.admin-form label {
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.admin-form textarea {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  min-height: 430px;
+  resize: vertical;
+}
+
+.form-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-error,
+.form-success {
+  border-radius: 8px;
+  font-weight: 750;
+  line-height: 1.45;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+}
+
+.form-error {
+  background: rgba(185, 107, 82, 0.12);
+  color: var(--danger);
+}
+
+.form-success {
+  background: rgba(47, 143, 103, 0.12);
+  color: var(--accent-strong);
 }
 
 .tab {
@@ -722,6 +1047,10 @@ h1 {
   margin-bottom: 14px;
 }
 
+.expense-filterbar {
+  grid-template-columns: minmax(220px, 340px);
+}
+
 .expense-summary article,
 .expense-card {
   border: 1px solid var(--line);
@@ -751,6 +1080,24 @@ h1 {
   gap: 14px;
 }
 
+.expense-overview-card {
+  margin-bottom: 14px;
+}
+
+.expense-balance-row {
+  align-items: center;
+  border-top: 1px solid rgba(215, 228, 210, 0.76);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(100px, auto));
+  padding-top: 9px;
+}
+
+.expense-balance-row span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .expense-card h2 {
   font-size: 1.08rem;
   margin: 0 0 12px;
@@ -762,7 +1109,18 @@ h1 {
 
 .expense-table {
   display: grid;
+  gap: 14px;
+}
+
+.expense-trip-group {
+  display: grid;
   gap: 8px;
+}
+
+.expense-trip-group h3 {
+  color: var(--accentStrong);
+  font-size: 0.92rem;
+  margin: 0;
 }
 
 .expense-row {
@@ -925,7 +1283,8 @@ h1 {
   .checklist-grid,
   .document-grid,
   .expense-summary,
-  .expense-columns {
+  .expense-columns,
+  .admin-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -939,8 +1298,18 @@ h1 {
 
   .shell {
     width: 100%;
-    padding: 12px 10px 22px;
+    padding: 84px 10px 22px;
     overflow-x: hidden;
+  }
+
+  .top-actions {
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+
+  .top-actions span {
+    font-size: 0.72rem;
   }
 
   .topbar {
@@ -965,7 +1334,9 @@ h1 {
   .document-grid,
   .expense-summary,
   .expense-columns,
-  .filterbar {
+  .filterbar,
+  .admin-grid,
+  .form-row {
     grid-template-columns: 1fr;
   }
 
@@ -1118,6 +1489,12 @@ h1 {
   }
 
   .expense-row {
+    align-items: start;
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .expense-balance-row {
     align-items: start;
     grid-template-columns: 1fr;
     gap: 5px;

@@ -1,9 +1,11 @@
 import { formatDateRange } from "../lib/format";
 import type { TripStep } from "../lib/types";
+import { EditButton } from "./EditButton";
 
-export function StepDetail({ step }: { step: TripStep }) {
+export function StepDetail({ onEdit, step }: { onEdit?: () => void; step: TripStep }) {
   return (
-    <div>
+    <div className="editable-region">
+      {onEdit && <EditButton label={`Modifier ${step.label}`} onClick={onEdit} />}
       <div className="step-kicker">
         <span className="dot" style={{ background: step.color }} />
         {step.region}

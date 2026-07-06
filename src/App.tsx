@@ -1,17 +1,22 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { BookingChecklist } from "./components/BookingChecklist";
+import { DataEditPanel } from "./components/DataEditPanel";
+import type { EditTarget } from "./components/DataEditPanel";
 import { DocumentList } from "./components/DocumentList";
+import { EditButton } from "./components/EditButton";
 import { EmptyState } from "./components/EmptyState";
 import { ExpensesOverview } from "./components/ExpensesOverview";
+import { LoginPanel } from "./components/LoginPanel";
 import { RouteTimeline } from "./components/RouteTimeline";
 import { StepDetail } from "./components/StepDetail";
 import { TripMap } from "./components/TripMap";
 import { TripStats } from "./components/TripStats";
 import { TripSwitcher } from "./components/TripSwitcher";
-import { travelFolders } from "./data/travelData";
-import { expenseItems } from "./data/expenses";
 import { formatDateRange } from "./lib/format";
-import type { TripStep } from "./lib/types";
+import { getCurrentUser, loadTravelData, onAuthStateChange, saveExpense, saveFolder, saveTrip, signOut } from "./lib/travelRepository";
+import type { ExpenseItem, TravelFolder, Trip, TripStep } from "./lib/types";
+import { LogOut } from "lucide-react";
 
 type TabId = "map" | "route" | "bookings" | "expenses" | "documents";
 
@@ -24,12 +29,20 @@ const tabs: Array<{ id: TabId; label: string }> = [
 ];
 
 export function App() {
-  const [activeFolderId, setActiveFolderId] = useState(travelFolders[0]?.id ?? "");
+  const [travelFolders, setTravelFolders] = useState<TravelFolder[]>([]);
+  const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
+  const [dataSource, setDataSource] = useState<"local" | "supabase">("local");
+  const [user, setUser] = useState<User | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState("");
   const activeFolder = useMemo(
     () => travelFolders.find((folder) => folder.id === activeFolderId) ?? travelFolders[0],
-    [activeFolderId],
+    [activeFolderId, travelFolders],
   );
-  const [activeTripId, setActiveTripId] = useState(activeFolder?.trips[0]?.id ?? "");
+  const [activeTripId, setActiveTripId] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("map");
 
   const activeTrip = useMemo(() => {
@@ -37,7 +50,63 @@ export function App() {
     return activeFolder.trips.find((trip) => trip.id === activeTripId) ?? activeFolder.trips[0];
   }, [activeFolder, activeTripId]);
 
-  const [selectedStepId, setSelectedStepId] = useState(activeTrip?.steps[0]?.id ?? "");
+  const [selectedStepId, setSelectedStepId] = useState("");
+
+  const refreshTravelData = useCallback(async (includePrivate = false) => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const result = await loadTravelData(includePrivate);
+      setTravelFolders(result.folders);
+      setExpenseItems(result.expenses);
+      setDataSource(result.source);
+      const nextFolder = result.folders[0];
+      const nextTrip = nextFolder?.trips[0];
+      setActiveFolderId((current) => result.folders.some((folder) => folder.id === current) ? current : nextFolder?.id ?? "");
+      setActiveTripId((current) =>
+        result.folders.some((folder) => folder.trips.some((trip) => trip.id === current)) ? current : nextTrip?.id ?? "",
+      );
+      setSelectedStepId((current) =>
+        result.folders.some((folder) => folder.trips.some((trip) => trip.steps.some((step) => step.id === current)))
+          ? current
+          : nextTrip?.steps[0]?.id ?? "",
+      );
+    } catch (caught) {
+      setLoadError(caught instanceof Error ? caught.message : "Chargement impossible.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then((currentUser) => {
+        setUser(currentUser);
+        return refreshTravelData(Boolean(currentUser));
+      })
+      .catch((caught) => {
+        setLoadError(caught instanceof Error ? caught.message : "Initialisation impossible.");
+        setIsLoading(false);
+      });
+
+    return onAuthStateChange((nextUser, event) => {
+      if (event === "INITIAL_SESSION") return;
+      setUser(nextUser);
+      setShowLogin(false);
+      void refreshTravelData(Boolean(nextUser));
+    });
+  }, [refreshTravelData]);
+
+  useEffect(() => {
+    const nextTrip = activeFolder?.trips.find((trip) => trip.id === activeTripId) ?? activeFolder?.trips[0];
+    if (nextTrip && !nextTrip.steps.some((step) => step.id === selectedStepId)) {
+      setSelectedStepId(nextTrip.steps[0]?.id ?? "");
+    }
+  }, [activeFolder, activeTripId, selectedStepId]);
+
+  if (isLoading && travelFolders.length === 0) {
+    return <EmptyState title="Chargement" copy="Les voyages sont en cours de chargement." />;
+  }
 
   if (!activeFolder || !activeTrip) {
     return <EmptyState title="Aucun voyage disponible" copy="Ajoute un dossier et un voyage dans src/data/travelData.ts." />;
@@ -60,16 +129,62 @@ export function App() {
     setSelectedStepId(nextTrip?.steps[0]?.id ?? "");
   }
 
+  async function handleSaveTrip(nextTrip: Trip) {
+    if (!user) throw new Error("Connexion requise.");
+    const folder = travelFolders.find((item) => item.id === nextTrip.folderId);
+    if (!folder) throw new Error("Le dossier du voyage est introuvable.");
+    await saveFolder(folder, user.id);
+    await saveTrip(nextTrip, user.id, true);
+    await refreshTravelData(true);
+  }
+
+  async function handleSaveExpenses(nextExpenses: ExpenseItem[]) {
+    if (!user) throw new Error("Connexion requise.");
+    await Promise.all(nextExpenses.map((expense) => saveExpense(expense, user.id)));
+    await refreshTravelData(true);
+  }
+
   return (
     <main className="shell">
+      <div className="top-actions" aria-label="Session">
+        <span>{dataSource === "supabase" ? "Donnees Supabase" : "Donnees locales"}</span>
+        {loadError && <span className="warning-text">{loadError}</span>}
+        {user ? (
+          <>
+            <span>{user.email}</span>
+            <button className="plain-btn icon-text-btn" onClick={() => void signOut()} type="button">
+              <LogOut aria-hidden="true" size={16} />
+              Deconnexion
+            </button>
+          </>
+        ) : (
+          <button className="plain-btn" onClick={() => setShowLogin((value) => !value)} type="button">
+            Connexion
+          </button>
+        )}
+      </div>
+
       <header className="topbar">
-        <div>
+        <div className="editable-region">
+          {user && <EditButton label="Modifier le voyage" onClick={() => setEditTarget({ type: "trip" })} />}
           <p className="eyebrow">{formatDateRange(activeTrip.startDate, activeTrip.endDate)}</p>
           <h1>{activeTrip.title}</h1>
           <p className="subtitle">{activeTrip.description}</p>
         </div>
-        <TripStats stats={activeTrip.stats} />
+        <TripStats onEdit={user ? () => setEditTarget({ type: "stats" }) : undefined} stats={activeTrip.stats} />
       </header>
+
+      {showLogin && <LoginPanel onClose={() => setShowLogin(false)} />}
+      {editTarget && user && (
+        <DataEditPanel
+          expenses={expenseItems}
+          onClose={() => setEditTarget(null)}
+          onSaveExpenses={handleSaveExpenses}
+          onSaveTrip={handleSaveTrip}
+          target={editTarget}
+          trip={activeTrip}
+        />
+      )}
 
       <TripSwitcher
         folders={travelFolders}
@@ -104,7 +219,12 @@ export function App() {
                 onStepSelect={setSelectedStepId}
               />
               <aside className="detail-card" aria-live="polite">
-                {selectedStep && <StepDetail step={selectedStep} />}
+                {selectedStep && (
+                  <StepDetail
+                    onEdit={user ? () => setEditTarget({ type: "step", stepId: selectedStep.id }) : undefined}
+                    step={selectedStep}
+                  />
+                )}
                 <div className="route-list" aria-label="Etapes du parcours">
                   {activeTrip.steps.map((step, index) => (
                     <button
@@ -131,10 +251,25 @@ export function App() {
         </section>
       )}
 
-      {activeTab === "route" && <RouteTimeline steps={activeTrip.steps} />}
-      {activeTab === "bookings" && <BookingChecklist bookings={activeTrip.bookings} />}
-      {activeTab === "expenses" && <ExpensesOverview expenses={expenseItems} folders={travelFolders} />}
-      {activeTab === "documents" && <DocumentList documents={activeTrip.documents} />}
+      {activeTab === "route" && (
+        <RouteTimeline
+          onEditStep={user ? (stepId) => setEditTarget({ type: "step", stepId }) : undefined}
+          steps={activeTrip.steps}
+        />
+      )}
+      {activeTab === "bookings" && (
+        <BookingChecklist bookings={activeTrip.bookings} onEdit={user ? () => setEditTarget({ type: "bookings" }) : undefined} />
+      )}
+      {activeTab === "expenses" && (
+        <ExpensesOverview
+          expenses={expenseItems}
+          folders={travelFolders}
+          onEdit={user ? () => setEditTarget({ type: "expenses" }) : undefined}
+        />
+      )}
+      {activeTab === "documents" && (
+        <DocumentList documents={activeTrip.documents} onEdit={user ? () => setEditTarget({ type: "documents" }) : undefined} />
+      )}
     </main>
   );
 }

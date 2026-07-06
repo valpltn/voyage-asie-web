@@ -1,11 +1,30 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import obfuscatorPlugin from "vite-plugin-javascript-obfuscator";
 import { cpSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 export default defineConfig({
   plugins: [
     react(),
+    obfuscatorPlugin({
+      apply: "build",
+      exclude: [/node_modules/],
+      options: {
+        compact: true,
+        controlFlowFlattening: false,
+        deadCodeInjection: false,
+        identifierNamesGenerator: "hexadecimal",
+        rotateStringArray: true,
+        selfDefending: false,
+        shuffleStringArray: true,
+        splitStrings: true,
+        splitStringsChunkLength: 8,
+        stringArray: true,
+        stringArrayEncoding: ["base64"],
+        stringArrayThreshold: 0.75,
+      },
+    }),
     {
       name: "copy-docs",
       configureServer(server) {
@@ -39,6 +58,11 @@ export default defineConfig({
     fs: {
       allow: [resolve(__dirname)],
     },
+  },
+  build: {
+    sourcemap: false,
+    minify: "esbuild",
+    cssMinify: true,
   },
   test: {
     environment: "jsdom",

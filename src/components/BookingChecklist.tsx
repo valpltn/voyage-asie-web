@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { priorityLabel, statusLabel } from "../lib/format";
 import type { BookingPriority, BookingStatus, BookingTask } from "../lib/types";
+import { EditButton } from "./EditButton";
 import { EmptyState } from "./EmptyState";
 
 const priorityFilters: Array<"all" | BookingPriority> = ["all", "high", "medium", "low"];
 const statusFilters: Array<"all" | BookingStatus> = ["all", "todo", "booked", "skipped"];
 
-export function BookingChecklist({ bookings }: { bookings: BookingTask[] }) {
+export function BookingChecklist({ bookings, onEdit }: { bookings: BookingTask[]; onEdit?: () => void }) {
   const [priority, setPriority] = useState<"all" | BookingPriority>("all");
   const [status, setStatus] = useState<"all" | BookingStatus>("all");
 
@@ -26,6 +27,11 @@ export function BookingChecklist({ bookings }: { bookings: BookingTask[] }) {
 
   return (
     <section className="view active">
+      {onEdit && (
+        <div className="view-actions">
+          <EditButton label="Modifier les reservations" onClick={onEdit} />
+        </div>
+      )}
       <div className="filterbar" aria-label="Filtres reservations">
         <label>
           Priorite
