@@ -289,6 +289,7 @@ export function App() {
       )}
       {activeTab === "expenses" && (
         <ExpensesOverview
+          activeTripId={activeTrip.id}
           expenses={expenseItems}
           folders={travelFolders}
           onEdit={isAdmin ? () => setEditTarget({ type: "expenses" }) : undefined}

@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
-import { ArrowDownUp, Filter } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDownUp, BarChart3, Filter, Pencil } from "lucide-react";
 import type { ExpenseItem, TravelFolder } from "../lib/types";
-import { EditButton } from "./EditButton";
 import { EmptyState } from "./EmptyState";
 
 interface ExpensesOverviewProps {
+  activeTripId?: string;
   expenses: ExpenseItem[];
   folders: TravelFolder[];
   onEdit?: () => void;
@@ -12,6 +12,7 @@ interface ExpensesOverviewProps {
 
 type ExpenseTypeFilter = "all" | ExpenseItem["kind"];
 type ExpenseSort = "date-desc" | "amount-desc" | "category" | "kind";
+type ChartMode = "category" | "trip";
 
 const euroFormatter = new Intl.NumberFormat("fr-FR", {
   currency: "EUR",
@@ -51,6 +52,22 @@ function groupExpensesByCategory(expenses: ExpenseItem[]) {
     .sort((left, right) => right.total - left.total || left.category.localeCompare(right.category));
 }
 
+function groupExpensesByTrip(expenses: ExpenseItem[], tripLabels: Map<string, string>) {
+  const groups = new Map<string, ExpenseItem[]>();
+  for (const expense of expenses) {
+    const label = tripLabels.get(expense.tripId ?? "") ?? "Sans voyage";
+    groups.set(label, [...(groups.get(label) ?? []), expense]);
+  }
+  return Array.from(groups.entries())
+    .map(([label, items]) => ({
+      label,
+      actual: totalFor(items, "actual"),
+      planned: totalFor(items, "planned"),
+      total: items.reduce((sum, expense) => sum + expense.amount, 0),
+    }))
+    .sort((left, right) => right.total - left.total || left.label.localeCompare(right.label));
+}
+
 function sortExpenses(expenses: ExpenseItem[], sort: ExpenseSort) {
   return [...expenses].sort((left, right) => {
     if (sort === "amount-desc") return right.amount - left.amount;
@@ -69,13 +86,18 @@ function formatDate(date?: string) {
   return dateFormatter.format(new Date(`${date}T00:00:00`));
 }
 
-export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverviewProps) {
+export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: ExpensesOverviewProps) {
   const trips = useMemo(() => allTrips(folders), [folders]);
   const tripLabels = useMemo(() => tripLabelById(folders), [folders]);
-  const [tripFilter, setTripFilter] = useState("all");
+  const [tripFilter, setTripFilter] = useState(activeTripId ?? "all");
   const [typeFilter, setTypeFilter] = useState<ExpenseTypeFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sort, setSort] = useState<ExpenseSort>("date-desc");
+  const [chartMode, setChartMode] = useState<ChartMode>("category");
+
+  useEffect(() => {
+    if (activeTripId) setTripFilter(activeTripId);
+  }, [activeTripId]);
 
   const tripOptions = [
     { id: "all", label: "Tous les voyages" },
@@ -100,9 +122,22 @@ export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverview
   const plannedTotal = totalFor(filteredExpenses, "planned");
   const actualTotal = totalFor(filteredExpenses, "actual");
   const groupedExpenses = groupExpensesByCategory(filteredExpenses);
+  const tripBreakdown = groupExpensesByTrip(expenses, tripLabels);
 
   if (expenses.length === 0) {
-    return <EmptyState title="Aucune depense" copy="Connecte-toi en mode admin pour ajouter le premier budget." />;
+    return (
+      <section className="view active">
+        {onEdit && (
+          <div className="view-actions">
+            <button className="primary-btn icon-text-btn" onClick={onEdit} type="button">
+              <Pencil aria-hidden="true" size={16} />
+              Ajouter des prix
+            </button>
+          </div>
+        )}
+        <EmptyState title="Aucune depense" copy="Connecte-toi en mode admin pour ajouter le premier budget." />
+      </section>
+    );
   }
 
   return (
@@ -112,7 +147,12 @@ export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverview
           <p className="eyebrow">Depenses</p>
           <h2>{selectedTripLabel}</h2>
         </div>
-        {onEdit && <EditButton label="Modifier les depenses" onClick={onEdit} />}
+        {onEdit && (
+          <button className="primary-btn icon-text-btn" onClick={onEdit} type="button">
+            <Pencil aria-hidden="true" size={16} />
+            Editer les prix
+          </button>
+        )}
       </div>
 
       <div className="expense-summary">
@@ -181,6 +221,41 @@ export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverview
         </label>
       </div>
 
+      <article className="expense-card expense-visual-card">
+        <div className="expense-card-heading">
+          <h3>
+            <span className="filter-label-icon">
+              <BarChart3 aria-hidden="true" size={17} />
+              Visualisation
+            </span>
+          </h3>
+          <div className="segmented-control" aria-label="Type de visualisation">
+            <button
+              className={chartMode === "category" ? "active" : ""}
+              onClick={() => setChartMode("category")}
+              type="button"
+            >
+              Categories
+            </button>
+            <button className={chartMode === "trip" ? "active" : ""} onClick={() => setChartMode("trip")} type="button">
+              Voyages
+            </button>
+          </div>
+        </div>
+        {chartMode === "category" ? (
+          <ExpenseBars
+            rows={groupedExpenses.map((group) => ({
+              actual: totalFor(group.expenses, "actual"),
+              label: group.category,
+              planned: totalFor(group.expenses, "planned"),
+              total: group.total,
+            }))}
+          />
+        ) : (
+          <ExpenseBars rows={tripBreakdown} />
+        )}
+      </article>
+
       {filteredExpenses.length === 0 ? (
         <EmptyState title="Aucune depense trouvee" copy="Ajuste les filtres pour afficher d'autres lignes budgetaires." />
       ) : (
@@ -211,5 +286,38 @@ export function ExpensesOverview({ expenses, folders, onEdit }: ExpensesOverview
         </div>
       )}
     </section>
+  );
+}
+
+function ExpenseBars({
+  rows,
+}: {
+  rows: Array<{ actual: number; label: string; planned: number; total: number }>;
+}) {
+  const maxTotal = Math.max(...rows.map((row) => row.total), 1);
+
+  return (
+    <div className="expense-bars">
+      {rows.map((row) => {
+        const plannedWidth = `${Math.max((row.planned / maxTotal) * 100, row.planned > 0 ? 3 : 0)}%`;
+        const actualWidth = `${Math.max((row.actual / maxTotal) * 100, row.actual > 0 ? 3 : 0)}%`;
+        return (
+          <div className="expense-bar-row" key={row.label}>
+            <div className="expense-bar-label">
+              <strong>{row.label}</strong>
+              <span>{euroFormatter.format(row.total)}</span>
+            </div>
+            <div className="expense-bar-track" aria-label={`${row.label}: ${euroFormatter.format(row.total)}`}>
+              <span className="expense-bar planned" style={{ width: plannedWidth }} />
+              <span className="expense-bar actual" style={{ width: actualWidth }} />
+            </div>
+            <div className="expense-bar-meta">
+              <span>Prev. {euroFormatter.format(row.planned)}</span>
+              <span>Passe {euroFormatter.format(row.actual)}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

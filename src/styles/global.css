@@ -1110,6 +1110,89 @@ h1 {
   margin-bottom: 12px;
 }
 
+.expense-visual-card {
+  margin-bottom: 14px;
+}
+
+.segmented-control {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+}
+
+.segmented-control button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 850;
+  min-height: 32px;
+  padding: 7px 10px;
+}
+
+.segmented-control button.active {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.expense-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.expense-bar-row {
+  display: grid;
+  gap: 7px;
+}
+
+.expense-bar-label,
+.expense-bar-meta {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.expense-bar-label strong {
+  overflow-wrap: anywhere;
+}
+
+.expense-bar-label span,
+.expense-bar-meta span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.expense-bar-track {
+  border-radius: 999px;
+  background: rgba(215, 228, 210, 0.72);
+  display: grid;
+  gap: 3px;
+  min-height: 22px;
+  overflow: hidden;
+  padding: 3px;
+}
+
+.expense-bar {
+  border-radius: 999px;
+  display: block;
+  min-height: 7px;
+}
+
+.expense-bar.planned {
+  background: var(--sun);
+}
+
+.expense-bar.actual {
+  background: var(--accent-strong);
+}
+
 .expense-table {
   display: grid;
   gap: 9px;

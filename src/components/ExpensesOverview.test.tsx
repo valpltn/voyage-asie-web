@@ -77,7 +77,7 @@ describe("ExpensesOverview", () => {
     fireEvent.change(screen.getByLabelText("Voyage"), { target: { value: "trip-a" } });
     expect(screen.queryByText("Hotel")).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/Type/), { target: { value: "actual" } });
+    fireEvent.change(screen.getAllByLabelText(/Type/)[0], { target: { value: "actual" } });
     expect(screen.queryByText("Train")).not.toBeInTheDocument();
     expect(screen.queryByText("Hotel")).not.toBeInTheDocument();
   });
