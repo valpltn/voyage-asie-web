@@ -39,7 +39,7 @@ function tripLabelById(folders: TravelFolder[]) {
 }
 
 function kindLabel(kind: ExpenseItem["kind"]) {
-  return kind === "planned" ? "Previsionnelle" : "Passee";
+  return kind === "planned" ? "Prévisionnelle" : "Passée";
 }
 
 function formatDate(date?: string) {
@@ -107,24 +107,24 @@ export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: Ex
     <section className="view active">
       <div className="expense-header">
         <div>
-          <p className="eyebrow">Depenses</p>
+          <p className="eyebrow">Dépenses</p>
           <h2>{selectedTripLabel}</h2>
         </div>
         {onEdit && (
           <button className="primary-btn icon-text-btn" onClick={onEdit} type="button">
             <Pencil aria-hidden="true" size={16} />
-            Ajouter / editer
+            Ajouter / éditer
           </button>
         )}
       </div>
 
       <div className="expense-summary">
         <article>
-          <span>Previsionnelle</span>
+          <span>Prévisionnelle</span>
           <strong>{euroFormatter.format(plannedTotal)}</strong>
         </article>
         <article>
-          <span>Passee</span>
+          <span>Passée</span>
           <strong>{euroFormatter.format(actualTotal)}</strong>
         </article>
         <article>
@@ -137,7 +137,7 @@ export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: Ex
         </article>
       </div>
 
-      <div className="filterbar expense-filterbar compact" aria-label="Filtres depenses">
+      <div className="filterbar expense-filterbar compact" aria-label="Filtres dépenses">
         <label>
           Voyage
           <select onChange={(event) => setTripFilter(event.target.value)} value={tripFilter}>
@@ -151,12 +151,12 @@ export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: Ex
         <label>
           <span className="filter-label-icon">
             <Filter aria-hidden="true" size={14} />
-            Categorie
+            Catégorie
           </span>
           <select onChange={(event) => setTypeFilter(event.target.value as ExpenseTypeFilter)} value={typeFilter}>
             <option value="all">Toutes</option>
-            <option value="planned">Previsionnelle</option>
-            <option value="actual">Passee</option>
+            <option value="planned">Prévisionnelle</option>
+            <option value="actual">Passée</option>
           </select>
         </label>
       </div>
@@ -164,7 +164,7 @@ export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: Ex
       <div className="expense-split-layout">
         <div className="expense-left-pane">
           {filteredExpenses.length === 0 ? (
-            <EmptyState title="Aucune depense" copy="Ajoute tes premieres depenses depuis le mode admin." />
+            <EmptyState title="Aucune dépense" copy="Ajoute tes premières dépenses depuis le mode admin." />
           ) : (
             <div className="expense-accordion-list">
               {groupedExpenses.map((group) => (
@@ -200,7 +200,7 @@ export function ExpensesOverview({ activeTripId, expenses, folders, onEdit }: Ex
               <h3>
                 <span className="filter-label-icon">
                   <PieChart aria-hidden="true" size={17} />
-                  Repartition
+                  Répartition
                 </span>
               </h3>
               <strong>{euroFormatter.format(total)}</strong>
@@ -236,7 +236,7 @@ function ExpensePie({ rows }: { rows: Array<{ label: string; total: number }> })
         ))}
       </div>
       {slices.length === 0 ? (
-        <p className="expense-pie-empty">Aucune donnee</p>
+        <p className="expense-pie-empty">Aucune donnée</p>
       ) : (
         <div className="expense-pie-legend">
           {slices.map((slice) => (

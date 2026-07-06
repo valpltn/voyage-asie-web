@@ -76,7 +76,7 @@ export async function geocodeAddress(query: string): Promise<GeocodingResult> {
   };
   const result = data.results?.[0];
   if (typeof result?.lat !== "number" || typeof result.lon !== "number") {
-    throw new Error("Aucun resultat trouve pour cette adresse.");
+    throw new Error("Aucun résultat trouve pour cette adresse.");
   }
 
   const geocodingResult: GeocodingResult = {

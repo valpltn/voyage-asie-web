@@ -33,8 +33,8 @@ type TabId = "map" | "route" | "bookings" | "expenses" | "documents";
 const tabs: Array<{ id: TabId; label: string }> = [
   { id: "map", label: "Carte" },
   { id: "route", label: "Parcours" },
-  { id: "bookings", label: "Reservations" },
-  { id: "expenses", label: "Depenses" },
+  { id: "bookings", label: "Réservations" },
+  { id: "expenses", label: "Dépenses" },
   { id: "documents", label: "Documents" },
 ];
 
@@ -202,15 +202,15 @@ export function App() {
   return (
     <main className="shell">
       <div className="top-actions" aria-label="Session">
-        <span>{dataSource === "supabase" ? "Donnees Supabase" : "Donnees locales"}</span>
+        <span>{dataSource === "supabase" ? "Données Supabase" : "Données locales"}</span>
         {loadError && <span className="warning-text">{loadError}</span>}
         {user ? (
           <>
             <span>{user.email}</span>
-            <span>{isAdmin ? "Mode admin" : "Lecture connectee"}</span>
+            <span>{isAdmin ? "Mode admin" : "Lecture connectée"}</span>
             <button className="plain-btn icon-text-btn" onClick={() => void signOut()} type="button">
               <LogOut aria-hidden="true" size={16} />
-              Deconnexion
+              Déconnexion
             </button>
           </>
         ) : (
@@ -268,7 +268,7 @@ export function App() {
       {activeTab === "map" && (
         <section className="view active">
           {activeTrip.steps.length === 0 ? (
-            <EmptyState title="Aucune etape" copy="Ajoute des etapes validees pour afficher la carte du voyage." />
+            <EmptyState title="Aucune étape" copy="Ajoute des étapes validées pour afficher la carte du voyage." />
           ) : (
             <div className="map-layout">
               <TripMap
@@ -283,7 +283,7 @@ export function App() {
                     step={selectedStep}
                   />
                 )}
-                <div className="route-list" aria-label="Etapes du parcours">
+                <div className="route-list" aria-label="Étapes du parcours">
                   {activeTrip.steps.map((step, index) => (
                     <button
                       className={`route-item ${selectedStep?.id === step.id ? "active" : ""}`}

@@ -55,11 +55,11 @@ function linesToDailyPlan(value: string) {
 
 function parseJsonArray<T>(value: string, label: string): T[] {
   const parsed = JSON.parse(value);
-  if (!Array.isArray(parsed)) throw new Error(`${label} doit etre un tableau JSON.`);
+  if (!Array.isArray(parsed)) throw new Error(`${label} doit être un tableau JSON.`);
   return parsed as T[];
 }
 
-const expenseCategories = ["Transport", "Hebergement", "Repas", "Activites", "Documents", "Divers"];
+const expenseCategories = ["Transport", "Hébergement", "Repas", "Activités", "Documents", "Divers"];
 
 export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSaveFolderTrips, onSaveTrip, target, trip }: DataEditPanelProps) {
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +67,10 @@ export function DataEditPanel({ expenses, folders, onClose, onSaveExpenses, onSa
   const [message, setMessage] = useState<string | null>(null);
 
   return (
-    <aside className="edit-panel" aria-label="Edition des donnees">
+    <aside className="edit-panel" aria-label="Édition des données">
       <div className="edit-panel-header">
         <div>
-          <p className="eyebrow">Edition</p>
+          <p className="eyebrow">Édition</p>
           <h2>{titleFor(target)}</h2>
         </div>
         <button aria-label="Fermer le panneau" className="icon-btn" onClick={onClose} type="button">
@@ -156,11 +156,11 @@ function titleFor(target: EditTarget) {
   if (target.type === "trip") return "Voyage";
   if (target.type === "folderTrips") return "Voyages disponibles";
   if (target.type === "stats") return "Statistiques";
-  if (target.type === "step") return "Etape";
-  if (target.type === "steps") return "Etapes du parcours";
-  if (target.type === "bookings") return "Reservations";
+  if (target.type === "step") return "Étape";
+  if (target.type === "steps") return "Étapes du parcours";
+  if (target.type === "bookings") return "Réservations";
   if (target.type === "documents") return "Documents";
-  return "Depenses";
+  return "Dépenses";
 }
 
 async function save(
@@ -174,7 +174,7 @@ async function save(
   setMessage(null);
   try {
     await action();
-    setMessage("Modifications sauvegardees.");
+    setMessage("Modifications sauvegardées.");
   } catch (caught) {
     setError(caught instanceof Error ? caught.message : "Sauvegarde impossible.");
   } finally {
@@ -219,7 +219,7 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
       const cityLabel = result.city ?? cityQuery.trim();
       const nextStep = {
         ...(steps[0] ?? createDefaultStep(trip.id, startDate, endDate)),
-        country: result.country ?? steps[0]?.country ?? "A definir",
+        country: result.country ?? steps[0]?.country ?? "À définir",
         coordinates: result.coordinates,
         label: cityLabel,
         shortLabel: cityLabel,
@@ -230,7 +230,7 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
       if (!title.trim() || title === "Nouveau weekend") {
         setTitle(cityLabel);
       }
-      setGeocodingMessage(`Ville trouvee : ${result.address}.`);
+      setGeocodingMessage(`Ville trouvée : ${result.address}.`);
     } catch (caught) {
       setGeocodingError(caught instanceof Error ? caught.message : "Recherche impossible.");
     } finally {
@@ -279,26 +279,26 @@ function TripForm({ isSaving, onSubmit, trip }: { isSaving: boolean; onSubmit: (
         </label>
         {steps[0] && (
           <p className="editor-copy">
-            Coordonnees : {steps[0].coordinates[0]}, {steps[0].coordinates[1]}
+            Coordonnées : {steps[0].coordinates[0]}, {steps[0].coordinates[1]}
           </p>
         )}
         {geocodingMessage && <p className="inline-success">{geocodingMessage}</p>}
         {geocodingError && <p className="inline-error">{geocodingError}</p>}
       </div>
       <div className="form-row">
-        <label>Debut<input onChange={(event) => setStartDate(event.target.value)} required type="date" value={startDate} /></label>
+        <label>Début<input onChange={(event) => setStartDate(event.target.value)} required type="date" value={startDate} /></label>
         <label>Fin<input onChange={(event) => setEndDate(event.target.value)} required type="date" value={endDate} /></label>
       </div>
       <label>
         Statut
         <select onChange={(event) => setStatus(event.target.value as Trip["status"])} value={status}>
           <option value="draft">Brouillon</option>
-          <option value="planned">Planifie</option>
+          <option value="planned">Planifié</option>
           <option value="active">Actif</option>
-          <option value="archived">Archive</option>
+          <option value="archived">Archivé</option>
         </select>
       </label>
-      <label>Notes privees<textarea onChange={(event) => setNotes(event.target.value)} value={notes} /></label>
+      <label>Notes privées<textarea onChange={(event) => setNotes(event.target.value)} value={notes} /></label>
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
   );
@@ -309,16 +309,16 @@ function createDefaultStep(tripId: string, startDate: string, endDate: string): 
     id: `${tripId}-centre`,
     label: "Centre ville",
     shortLabel: "Centre",
-    region: "A definir",
-    country: "A definir",
+    region: "À définir",
+    country: "À définir",
     color: "#2f8f67",
     coordinates: [25.033, 121.5654],
     startDate,
     endDate,
-    nights: "A definir",
-    transport: "Transport a preciser.",
-    highlights: ["Budget", "Logement", "Activites"],
-    dailyPlan: [{ date: "Jour 1", summary: "Arrivee et premiere balade." }],
+    nights: "À définir",
+    transport: "Transport à préciser.",
+    highlights: ["Budget", "Logement", "Activités"],
+    dailyPlan: [{ date: "Jour 1", summary: "Arrivée et première balade." }],
   };
 }
 
@@ -369,7 +369,7 @@ function normalizeTripForSave(trip: Trip, folderId: string): Trip {
     id: nextId,
     folderId,
     title: cleanTitle,
-    description: trip.description.trim() || "Description a completer.",
+    description: trip.description.trim() || "Description à compléter.",
     imageUrl: trip.imageUrl?.trim() || undefined,
     notes: trip.notes?.trim() || undefined,
     stats: trip.stats.filter((stat) => stat.value.trim() && stat.label.trim()),
@@ -529,7 +529,7 @@ function StatsForm({
       {draft.map((stat, index) => (
         <div className="form-row" key={index}>
           <label>Valeur<input onChange={(event) => setDraft(draft.map((item, i) => i === index ? { ...item, value: event.target.value } : item))} value={stat.value} /></label>
-          <label>Libelle<input onChange={(event) => setDraft(draft.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} value={stat.label} /></label>
+          <label>Libellé<input onChange={(event) => setDraft(draft.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} value={stat.label} /></label>
         </div>
       ))}
       <button className="plain-btn" onClick={() => setDraft([...draft, { value: "", label: "" }])} type="button">Ajouter une statistique</button>
@@ -563,7 +563,7 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
     try {
       const result = await geocodeAddress(addressQuery);
       setDraft((current) => ({ ...current, coordinates: result.coordinates }));
-      setGeocodingMessage(`Coordonnees trouvees pour ${result.address}.`);
+      setGeocodingMessage(`Coordonnées trouvées pour ${result.address}.`);
     } catch (caught) {
       setGeocodingError(caught instanceof Error ? caught.message : "Recherche impossible.");
     } finally {
@@ -636,13 +636,13 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
         </label>
       </div>
       <div className="form-row">
-        <label>Debut<input onChange={(event) => setDraft({ ...draft, startDate: event.target.value })} required type="date" value={draft.startDate} /></label>
+        <label>Début<input onChange={(event) => setDraft({ ...draft, startDate: event.target.value })} required type="date" value={draft.startDate} /></label>
         <label>Fin<input onChange={(event) => setDraft({ ...draft, endDate: event.target.value })} required type="date" value={draft.endDate} /></label>
       </div>
       <label>Nuits<input onChange={(event) => setDraft({ ...draft, nights: event.target.value })} required value={draft.nights} /></label>
       <label>Transport<textarea onChange={(event) => setDraft({ ...draft, transport: event.target.value })} required value={draft.transport} /></label>
       <label>Temps forts<textarea onChange={(event) => setHighlights(event.target.value)} value={highlights} /></label>
-      <label>Planning jour par jour<textarea onChange={(event) => setDailyPlan(event.target.value)} placeholder="Jour 1 | Arrivee et installation" value={dailyPlan} /></label>
+      <label>Planning jour par jour<textarea onChange={(event) => setDailyPlan(event.target.value)} placeholder="Jour 1 | Arrivée et installation" value={dailyPlan} /></label>
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
   );
@@ -653,24 +653,24 @@ function createBlankStep(trip: Trip, index: number): TripStep {
   return {
     ...createDefaultStep(id, trip.startDate, trip.endDate),
     id,
-    label: `Nouvelle etape ${index + 1}`,
-    shortLabel: `Etape ${index + 1}`,
+    label: `Nouvelle étape ${index + 1}`,
+    shortLabel: `Étape ${index + 1}`,
   };
 }
 
 function normalizeStepForSave(step: TripStep): TripStep {
-  const cleanLabel = step.label.trim() || "Nouvelle etape";
+  const cleanLabel = step.label.trim() || "Nouvelle étape";
   return {
     ...step,
     id: step.id.trim() || createId("etape"),
     label: cleanLabel,
     shortLabel: step.shortLabel.trim() || cleanLabel,
-    region: step.region.trim() || "A definir",
-    country: step.country.trim() || "A definir",
-    nights: step.nights.trim() || "A definir",
-    transport: step.transport.trim() || "Transport a preciser.",
+    region: step.region.trim() || "À définir",
+    country: step.country.trim() || "À définir",
+    nights: step.nights.trim() || "À définir",
+    transport: step.transport.trim() || "Transport à préciser.",
     highlights: step.highlights.map((highlight) => highlight.trim()).filter(Boolean),
-    dailyPlan: step.dailyPlan.length > 0 ? step.dailyPlan : [{ date: "Jour 1", summary: "Planning a completer." }],
+    dailyPlan: step.dailyPlan.length > 0 ? step.dailyPlan : [{ date: "Jour 1", summary: "Planning à compléter." }],
   };
 }
 
@@ -719,11 +719,11 @@ function StepsForm({
     <div className="editor-form">
       <button className="plain-btn icon-text-btn" onClick={addStep} type="button">
         <Plus aria-hidden="true" size={16} />
-        Ajouter une etape
+        Ajouter une étape
       </button>
       <div className="trip-manager-layout">
-        <div className="editor-list steps-manager-list" aria-label="Etapes du parcours">
-          {draftSteps.length === 0 && <p className="editor-copy">Aucune etape dans ce parcours.</p>}
+        <div className="editor-list steps-manager-list" aria-label="Étapes du parcours">
+          {draftSteps.length === 0 && <p className="editor-copy">Aucune étape dans ce parcours.</p>}
           {draftSteps.map((step, index) => (
             <article className={`trip-manager-item ${step.id === editingId ? "active" : ""}`} key={step.id}>
               <button className="trip-manager-select" onClick={() => setEditingId(step.id)} type="button">
@@ -733,7 +733,7 @@ function StepsForm({
                 </span>
               </button>
               <button
-                aria-label="Supprimer l'etape"
+                aria-label="Supprimer l'étape"
                 className="icon-btn danger-btn"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -749,7 +749,7 @@ function StepsForm({
         {editingStep ? (
           <StepForm isSaving={isSaving} onSubmit={updateStep} step={editingStep} />
         ) : (
-          <p className="editor-copy">Ajoute une etape pour commencer.</p>
+          <p className="editor-copy">Ajoute une étape pour commencer.</p>
         )}
       </div>
       <button
@@ -758,7 +758,7 @@ function StepsForm({
         onClick={() => onSubmit(draftSteps.map(normalizeStepForSave))}
         type="button"
       >
-        Sauvegarder les etapes
+        Sauvegarder les étapes
       </button>
     </div>
   );
@@ -793,8 +793,8 @@ function BookingsForm({
       {
         id: createId("reservation"),
         tripId,
-        category: "A classer",
-        label: "Nouvelle reservation",
+        category: "À classer",
+        label: "Nouvelle réservation",
         priority: "medium",
         status: "todo",
       },
@@ -811,7 +811,7 @@ function BookingsForm({
     >
       <button className="plain-btn icon-text-btn" onClick={addBooking} type="button">
         <Plus aria-hidden="true" size={16} />
-        Ajouter une reservation
+        Ajouter une réservation
       </button>
       <div className="editor-list">
         {draft.map((booking, index) => (
@@ -819,7 +819,7 @@ function BookingsForm({
             <div className="editor-item-header">
               <strong>{booking.label}</strong>
               <button
-                aria-label="Supprimer la reservation"
+                aria-label="Supprimer la réservation"
                 className="icon-btn"
                 onClick={() => setDraft(draft.filter((_, currentIndex) => currentIndex !== index))}
                 type="button"
@@ -827,14 +827,14 @@ function BookingsForm({
                 <Trash2 aria-hidden="true" size={16} />
               </button>
             </div>
-            <label>Libelle<input onChange={(event) => updateBooking(index, { ...booking, label: event.target.value })} required value={booking.label} /></label>
+            <label>Libellé<input onChange={(event) => updateBooking(index, { ...booking, label: event.target.value })} required value={booking.label} /></label>
             <div className="form-row">
-              <label>Categorie<input onChange={(event) => updateBooking(index, { ...booking, category: event.target.value })} required value={booking.category} /></label>
-              <label>Echeance<input onChange={(event) => updateBooking(index, { ...booking, dueDate: event.target.value || undefined })} type="date" value={booking.dueDate ?? ""} /></label>
+              <label>Catégorie<input onChange={(event) => updateBooking(index, { ...booking, category: event.target.value })} required value={booking.category} /></label>
+              <label>Échéance<input onChange={(event) => updateBooking(index, { ...booking, dueDate: event.target.value || undefined })} type="date" value={booking.dueDate ?? ""} /></label>
             </div>
             <div className="form-row">
               <label>
-                Priorite
+                Priorité
                 <select onChange={(event) => updateBooking(index, { ...booking, priority: event.target.value as BookingTask["priority"] })} value={booking.priority}>
                   <option value="high">Haute</option>
                   <option value="medium">Moyenne</option>
@@ -844,9 +844,9 @@ function BookingsForm({
               <label>
                 Statut
                 <select onChange={(event) => updateBooking(index, { ...booking, status: event.target.value as BookingTask["status"] })} value={booking.status}>
-                  <option value="todo">A faire</option>
-                  <option value="booked">Reserve</option>
-                  <option value="skipped">Ignore</option>
+                  <option value="todo">À faire</option>
+                  <option value="booked">Réservé</option>
+                  <option value="skipped">Ignoré</option>
                 </select>
               </label>
             </div>
@@ -892,7 +892,7 @@ function ExpensesForm({
 
   function addExpense() {
     const nextExpense: ExpenseItem = {
-      id: createId("depense"),
+      id: createId("dépense"),
       tripId: selectedTripId === "unassigned" ? undefined : selectedTripId || undefined,
       label: "",
       category: "Transport",
@@ -911,7 +911,7 @@ function ExpensesForm({
   function removeExpense(expenseId: string) {
     const expense = draft.find((item) => item.id === expenseId);
     if (!expense) return;
-    const confirmed = window.confirm(`Supprimer "${expense.label || "cette depense"}" ?`);
+    const confirmed = window.confirm(`Supprimer "${expense.label || "cette dépense"}" ?`);
     if (!confirmed) return;
     setDraft(draft.filter((item) => item.id !== expenseId));
     if (editingId === expenseId) setEditingId(null);
@@ -940,7 +940,7 @@ function ExpensesForm({
     >
       <div className="expense-editor-toolbar">
         <label>
-          Voyage a editer
+          Voyage à éditer
           <select onChange={(event) => setSelectedTripId(event.target.value)} value={selectedTripId}>
             {trips.map((trip) => (
               <option key={trip.id} value={trip.id}>
@@ -952,25 +952,25 @@ function ExpensesForm({
         </label>
         <button className="plain-btn icon-text-btn" onClick={addExpense} type="button">
           <Plus aria-hidden="true" size={16} />
-          Ajouter une depense
+          Ajouter une dépense
         </button>
       </div>
       <div className="editor-list">
-        {visibleExpenses.length === 0 && <p className="editor-copy">Aucune depense pour ce voyage.</p>}
+        {visibleExpenses.length === 0 && <p className="editor-copy">Aucune dépense pour ce voyage.</p>}
         {visibleExpenses.map((expense) => {
           const isEditing = editingId === expense.id;
           return (
             <article className="editor-item expense-editor-item" key={expense.id}>
               <div className="editor-item-header">
                 <div>
-                  <strong>{expense.label || "Nouvelle depense"}</strong>
+                  <strong>{expense.label || "Nouvelle dépense"}</strong>
                   <span>
-                    {expense.category} - {expense.kind === "planned" ? "Previsionnel" : "Passe"} - {expense.amount} EUR
+                    {expense.category} - {expense.kind === "planned" ? "Prévisionnel" : "Passé"} - {expense.amount} EUR
                   </span>
                 </div>
                 <div className="editor-actions">
                   <button
-                    aria-label={isEditing ? "Terminer l'edition" : "Modifier la depense"}
+                    aria-label={isEditing ? "Terminer l'édition" : "Modifier la dépense"}
                     className="icon-btn"
                     onClick={() => setEditingId(isEditing ? null : expense.id)}
                     type="button"
@@ -978,7 +978,7 @@ function ExpensesForm({
                     {isEditing ? <Check aria-hidden="true" size={16} /> : <Pencil aria-hidden="true" size={16} />}
                   </button>
                   <button
-                    aria-label="Supprimer la depense"
+                    aria-label="Supprimer la dépense"
                     className="icon-btn danger-btn"
                     onClick={() => removeExpense(expense.id)}
                     type="button"
@@ -990,7 +990,7 @@ function ExpensesForm({
               {isEditing && (
                 <>
                   <label>
-                    Libelle
+                    Libellé
                     <input
                       onChange={(event) => updateExpense(expense.id, { ...expense, label: event.target.value })}
                       required
@@ -1017,8 +1017,8 @@ function ExpensesForm({
                         }
                         value={expense.kind}
                       >
-                        <option value="planned">Previsionnel</option>
-                        <option value="actual">Passe</option>
+                        <option value="planned">Prévisionnel</option>
+                        <option value="actual">Passé</option>
                       </select>
                     </label>
                   </div>

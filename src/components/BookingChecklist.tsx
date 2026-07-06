@@ -22,19 +22,19 @@ export function BookingChecklist({ bookings, onEdit }: { bookings: BookingTask[]
   );
 
   if (bookings.length === 0) {
-    return <EmptyState title="Aucune reservation" copy="Ajoute des taches de reservation pour suivre la logistique." />;
+    return <EmptyState title="Aucune réservation" copy="Ajoute des tâches de réservation pour suivre la logistique." />;
   }
 
   return (
     <section className="view active">
       {onEdit && (
         <div className="view-actions">
-          <EditButton label="Modifier les reservations" onClick={onEdit} />
+          <EditButton label="Modifier les réservations" onClick={onEdit} />
         </div>
       )}
-      <div className="filterbar" aria-label="Filtres reservations">
+      <div className="filterbar" aria-label="Filtres réservations">
         <label>
-          Priorite
+          Priorité
           <select onChange={(event) => setPriority(event.target.value as "all" | BookingPriority)} value={priority}>
             {priorityFilters.map((item) => (
               <option key={item} value={item}>
@@ -55,7 +55,7 @@ export function BookingChecklist({ bookings, onEdit }: { bookings: BookingTask[]
         </label>
       </div>
       {filteredBookings.length === 0 ? (
-        <EmptyState title="Aucun resultat" copy="Aucune reservation ne correspond aux filtres actifs." />
+        <EmptyState title="Aucun résultat" copy="Aucune réservation ne correspond aux filtres actifs." />
       ) : (
         <div className="checklist-grid">
           {filteredBookings.map((booking) => (
@@ -66,8 +66,8 @@ export function BookingChecklist({ bookings, onEdit }: { bookings: BookingTask[]
               </div>
               <h2>{booking.label}</h2>
               <p>
-                Statut: {statusLabel(booking.status)}
-                {booking.dueDate ? ` | Echeance: ${booking.dueDate}` : ""}
+                Statut : {statusLabel(booking.status)}
+                {booking.dueDate ? ` | Échéance: ${booking.dueDate}` : ""}
               </p>
               {booking.notes && <p>{booking.notes}</p>}
             </article>

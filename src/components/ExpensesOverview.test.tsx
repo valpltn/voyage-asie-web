@@ -50,10 +50,10 @@ const expenses: ExpenseItem[] = [
     date: "2026-01-01",
   },
   {
-    id: "b-hotel",
+    id: "b-hôtel",
     tripId: "trip-b",
     label: "Hotel",
-    category: "Hebergement",
+    category: "Hébergement",
     kind: "actual",
     amount: 300,
     currency: "EUR",
@@ -65,7 +65,7 @@ describe("ExpensesOverview", () => {
   it("hides edit action when no admin edit handler is provided", () => {
     render(<ExpensesOverview expenses={expenses} folders={folders} />);
 
-    expect(screen.queryByRole("button", { name: "Ajouter / editer" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ajouter / éditer" })).not.toBeInTheDocument();
   });
 
   it("filters expenses by selected trip and type", () => {
@@ -77,7 +77,7 @@ describe("ExpensesOverview", () => {
     fireEvent.change(screen.getByLabelText("Voyage"), { target: { value: "trip-a" } });
     expect(screen.queryByText("Hotel")).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/Categorie/), { target: { value: "actual" } });
+    fireEvent.change(screen.getByLabelText(/Catégorie/), { target: { value: "actual" } });
     expect(screen.queryByText("Train")).not.toBeInTheDocument();
     expect(screen.queryByText("Hotel")).not.toBeInTheDocument();
   });
@@ -87,8 +87,8 @@ describe("ExpensesOverview", () => {
 
     fireEvent.change(screen.getByLabelText("Voyage"), { target: { value: "all" } });
 
-    expect(screen.getByText("Repartition")).toBeInTheDocument();
+    expect(screen.getByText("Répartition")).toBeInTheDocument();
     expect(screen.getAllByTitle(/Transport: 28\.6%/).length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/Hebergement: 71\.4%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/Hébergement: 71\.4%/).length).toBeGreaterThan(0);
   });
 });

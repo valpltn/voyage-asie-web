@@ -4,7 +4,7 @@ import { EmptyState } from "./EmptyState";
 
 export function DocumentList({ documents, onEdit }: { documents: DocumentLink[]; onEdit?: () => void }) {
   if (documents.length === 0) {
-    return <EmptyState title="Aucun document" copy="Relie ici les itineraires, checklists et notes utiles au voyage." />;
+    return <EmptyState title="Aucun document" copy="Relie ici les itinéraires, checklists et notes utiles au voyage." />;
   }
 
   return (

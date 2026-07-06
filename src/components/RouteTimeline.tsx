@@ -18,7 +18,7 @@ export function RouteTimeline({
         <div className="view-actions">
           {onManageSteps && (
             <button className="plain-btn" onClick={onManageSteps} type="button">
-              Gerer les etapes
+              Gérer les étapes
             </button>
           )}
         </div>
@@ -32,7 +32,7 @@ export function RouteTimeline({
       <div className="view-actions">
         {onManageSteps && (
           <button className="plain-btn" onClick={onManageSteps} type="button">
-            Gerer les etapes
+            Gérer les étapes
           </button>
         )}
       </div>
