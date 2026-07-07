@@ -180,13 +180,7 @@ h1 {
   display: grid;
   gap: 9px;
   grid-template-columns: 1fr;
-  max-height: calc((104px + 16px) * 4);
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 2px 0 10px;
-  padding-right: 4px;
-  scrollbar-color: rgba(47, 143, 103, 0.34) transparent;
-  scrollbar-width: thin;
 }
 
 .destination-grid::-webkit-scrollbar {
@@ -1751,6 +1745,11 @@ h1 {
 
   .destination-grid {
     max-height: calc((92px + 15px) * 4);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+    scrollbar-color: rgba(47, 143, 103, 0.34) transparent;
+    scrollbar-width: thin;
   }
 
   .destination-content {

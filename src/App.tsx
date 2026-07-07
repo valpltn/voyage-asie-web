@@ -38,6 +38,10 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: "documents", label: "Documents" },
 ];
 
+function isMobileViewport() {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 700px)").matches;
+}
+
 export function App() {
   const [travelFolders, setTravelFolders] = useState<TravelFolder[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
@@ -55,6 +59,7 @@ export function App() {
   );
   const [activeTripId, setActiveTripId] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("map");
+  const [isMobile, setIsMobile] = useState(isMobileViewport);
 
   const activeTrip = useMemo(() => {
     if (!activeFolder) return undefined;
@@ -62,6 +67,19 @@ export function App() {
   }, [activeFolder, activeTripId]);
 
   const [selectedStepId, setSelectedStepId] = useState("");
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 700px)");
+    const handleChange = () => setIsMobile(query.matches);
+    handleChange();
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", handleChange);
+      return () => query.removeEventListener("change", handleChange);
+    }
+    query.addListener(handleChange);
+    return () => query.removeListener(handleChange);
+  }, []);
 
   async function resolveIsAdmin(currentUser: User | null) {
     if (!currentUser) return false;
@@ -148,7 +166,8 @@ export function App() {
     return <EmptyState title="Aucun voyage disponible" copy="Ajoute un dossier et un voyage dans src/data/travelData.ts." />;
   }
 
-  const selectedStep: TripStep | undefined = activeTrip.steps.find((step) => step.id === selectedStepId);
+  const selectedStep: TripStep | undefined =
+    activeTrip.steps.find((step) => step.id === selectedStepId) ?? (isMobile ? undefined : activeTrip.steps[0]);
 
   function handleFolderChange(folderId: string) {
     const nextFolder = travelFolders.find((folder) => folder.id === folderId);
