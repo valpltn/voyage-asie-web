@@ -13,6 +13,7 @@ import { TripMap } from "./components/TripMap";
 import { TripStats } from "./components/TripStats";
 import { TripSwitcher } from "./components/TripSwitcher";
 import { formatDateRange } from "./lib/format";
+import { useMediaQuery } from "./lib/useMediaQuery";
 import {
   getCurrentProfile,
   getCurrentUser,
@@ -38,10 +39,6 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: "documents", label: "Documents" },
 ];
 
-function isMobileViewport() {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 700px)").matches;
-}
-
 export function App() {
   const [travelFolders, setTravelFolders] = useState<TravelFolder[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>([]);
@@ -53,13 +50,13 @@ export function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeFolderId, setActiveFolderId] = useState("");
+  const isMobile = useMediaQuery("(max-width: 700px)");
   const activeFolder = useMemo(
     () => travelFolders.find((folder) => folder.id === activeFolderId) ?? travelFolders[0],
     [activeFolderId, travelFolders],
   );
   const [activeTripId, setActiveTripId] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("map");
-  const [isMobile, setIsMobile] = useState(isMobileViewport);
 
   const activeTrip = useMemo(() => {
     if (!activeFolder) return undefined;
@@ -67,19 +64,6 @@ export function App() {
   }, [activeFolder, activeTripId]);
 
   const [selectedStepId, setSelectedStepId] = useState("");
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(max-width: 700px)");
-    const handleChange = () => setIsMobile(query.matches);
-    handleChange();
-    if (typeof query.addEventListener === "function") {
-      query.addEventListener("change", handleChange);
-      return () => query.removeEventListener("change", handleChange);
-    }
-    query.addListener(handleChange);
-    return () => query.removeListener(handleChange);
-  }, []);
 
   async function resolveIsAdmin(currentUser: User | null) {
     if (!currentUser) return false;
