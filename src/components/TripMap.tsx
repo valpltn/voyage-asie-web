@@ -5,6 +5,7 @@ import type { TripStep } from "../lib/types";
 
 interface TripMapProps {
   steps: TripStep[];
+  isActive?: boolean;
   selectedStepId?: string;
   onStepSelect: (stepId: string) => void;
 }
@@ -39,7 +40,11 @@ const mapStyles: Array<{
   },
 ];
 
-export function TripMap({ steps, selectedStepId, onStepSelect }: TripMapProps) {
+function isCoarsePointer() {
+  return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+}
+
+export function TripMap({ isActive = true, steps, selectedStepId, onStepSelect }: TripMapProps) {
   const [mapStyleId, setMapStyleId] = useState<MapStyleId>("quiet");
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -58,7 +63,7 @@ export function TripMap({ steps, selectedStepId, onStepSelect }: TripMapProps) {
     if (!mapNodeRef.current || mapRef.current) return;
 
     mapRef.current = L.map(mapNodeRef.current, {
-      scrollWheelZoom: true,
+      scrollWheelZoom: !isCoarsePointer(),
       zoomControl: true,
     }).setView(initialCenter, steps.length > 1 ? 5 : 8);
 
@@ -77,6 +82,40 @@ export function TripMap({ steps, selectedStepId, onStepSelect }: TripMapProps) {
       markersRef.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isActive) return;
+
+    const resizeTimer = window.setTimeout(() => {
+      map.invalidateSize();
+      if (routeBounds?.isValid()) {
+        map.fitBounds(routeBounds, { padding: [36, 36] });
+      }
+    }, 90);
+
+    return () => window.clearTimeout(resizeTimer);
+  }, [isActive, routeBounds]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const currentMap = map;
+
+    function handleResize() {
+      currentMap.invalidateSize();
+      if (routeBounds?.isValid()) {
+        currentMap.fitBounds(routeBounds, { padding: [36, 36] });
+      }
+    }
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, [routeBounds]);
 
   useEffect(() => {
     const map = mapRef.current;

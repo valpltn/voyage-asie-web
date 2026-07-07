@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent, WheelEvent } from "react";
 import { Settings } from "lucide-react";
 import type { TravelFolder } from "../lib/types";
@@ -22,7 +22,7 @@ export function TripSwitcher({
   onTripChange,
 }: TripSwitcherProps) {
   const activeFolder = folders.find((folder) => folder.id === activeFolderId) ?? folders[0];
-  const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
+  const [expandedTripId, setExpandedTripId] = useState<string | null>(activeTripId);
   const closeTimer = useRef<number | undefined>(undefined);
   const switchTimer = useRef<number | undefined>(undefined);
   const tripImages: Record<string, string> = {
@@ -59,6 +59,10 @@ export function TripSwitcher({
   const fallbackImage =
     "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=900&q=80";
 
+  useEffect(() => {
+    setExpandedTripId(activeTripId);
+  }, [activeTripId]);
+
   function handleCarouselWheel(event: WheelEvent<HTMLDivElement>) {
     if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
     event.currentTarget.scrollLeft += event.deltaY;
@@ -71,6 +75,8 @@ export function TripSwitcher({
   }
 
   function handleCardPointerEnter(tripId: string) {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
     window.clearTimeout(closeTimer.current);
     window.clearTimeout(switchTimer.current);
 
@@ -85,6 +91,8 @@ export function TripSwitcher({
   }
 
   function handleCardPointerLeave(event: PointerEvent<HTMLButtonElement>) {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
     const nextTarget = event.relatedTarget;
     if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
 

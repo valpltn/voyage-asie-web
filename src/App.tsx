@@ -272,6 +272,7 @@ export function App() {
           ) : (
             <div className="map-layout">
               <TripMap
+                isActive={activeTab === "map"}
                 selectedStepId={selectedStep?.id}
                 steps={activeTrip.steps}
                 onStepSelect={setSelectedStepId}
