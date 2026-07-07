@@ -274,8 +274,9 @@ export function App() {
             <div className={`map-layout ${selectedStep ? "" : "no-detail"}`}>
               <TripMap
                 isActive={activeTab === "map"}
-                selectedStepId={selectedStep?.id}
+                selectedStepId={selectedStepId}
                 steps={activeTrip.steps}
+                onRouteFit={() => setSelectedStepId("")}
                 onStepSelect={setSelectedStepId}
               />
               {selectedStep && (

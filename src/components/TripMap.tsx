@@ -7,6 +7,7 @@ interface TripMapProps {
   steps: TripStep[];
   isActive?: boolean;
   selectedStepId?: string;
+  onRouteFit?: () => void;
   onStepSelect: (stepId: string) => void;
 }
 
@@ -44,7 +45,7 @@ function isCoarsePointer() {
   return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 }
 
-export function TripMap({ isActive = true, steps, selectedStepId, onStepSelect }: TripMapProps) {
+export function TripMap({ isActive = true, steps, selectedStepId, onRouteFit, onStepSelect }: TripMapProps) {
   const [mapStyleId, setMapStyleId] = useState<MapStyleId>("quiet");
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -249,8 +250,13 @@ export function TripMap({ isActive = true, steps, selectedStepId, onStepSelect }
   function fitRoute() {
     const map = mapRef.current;
     if (!map || !routeBounds?.isValid()) return;
+    detailMarkersRef.current.forEach((marker) => marker.remove());
+    detailMarkersRef.current = [];
+    detailLineRef.current?.setLatLngs([]);
+    map.closePopup();
     map.invalidateSize();
     map.fitBounds(routeBounds, { padding: [36, 36] });
+    onRouteFit?.();
   }
 
   return (
