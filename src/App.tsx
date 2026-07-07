@@ -91,7 +91,7 @@ export function App() {
       setSelectedStepId((current) =>
         safeResult.folders.some((folder) => folder.trips.some((trip) => trip.steps.some((step) => step.id === current)))
           ? current
-          : nextTrip?.steps[0]?.id ?? "",
+          : "",
       );
     } catch (caught) {
       setLoadError(caught instanceof Error ? caught.message : "Chargement impossible.");
@@ -103,7 +103,7 @@ export function App() {
       const nextTrip = nextFolder?.trips[0];
       setActiveFolderId(nextFolder?.id ?? "");
       setActiveTripId(nextTrip?.id ?? "");
-      setSelectedStepId(nextTrip?.steps[0]?.id ?? "");
+      setSelectedStepId("");
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +136,7 @@ export function App() {
   useEffect(() => {
     const nextTrip = activeFolder?.trips.find((trip) => trip.id === activeTripId) ?? activeFolder?.trips[0];
     if (nextTrip && !nextTrip.steps.some((step) => step.id === selectedStepId)) {
-      setSelectedStepId(nextTrip.steps[0]?.id ?? "");
+      setSelectedStepId("");
     }
   }, [activeFolder, activeTripId, selectedStepId]);
 
@@ -148,21 +148,19 @@ export function App() {
     return <EmptyState title="Aucun voyage disponible" copy="Ajoute un dossier et un voyage dans src/data/travelData.ts." />;
   }
 
-  const selectedStep: TripStep | undefined =
-    activeTrip.steps.find((step) => step.id === selectedStepId) ?? activeTrip.steps[0];
+  const selectedStep: TripStep | undefined = activeTrip.steps.find((step) => step.id === selectedStepId);
 
   function handleFolderChange(folderId: string) {
     const nextFolder = travelFolders.find((folder) => folder.id === folderId);
     const nextTrip = nextFolder?.trips[0];
     setActiveFolderId(folderId);
     setActiveTripId(nextTrip?.id ?? "");
-    setSelectedStepId(nextTrip?.steps[0]?.id ?? "");
+    setSelectedStepId("");
   }
 
   function handleTripChange(tripId: string) {
-    const nextTrip = activeFolder.trips.find((trip) => trip.id === tripId);
     setActiveTripId(tripId);
-    setSelectedStepId(nextTrip?.steps[0]?.id ?? "");
+    setSelectedStepId("");
   }
 
   async function handleSaveTrip(nextTrip: Trip) {
@@ -270,20 +268,19 @@ export function App() {
           {activeTrip.steps.length === 0 ? (
             <EmptyState title="Aucune étape" copy="Ajoute des étapes validées pour afficher la carte du voyage." />
           ) : (
-            <div className="map-layout">
+            <div className={`map-layout ${selectedStep ? "" : "no-detail"}`}>
               <TripMap
                 isActive={activeTab === "map"}
                 selectedStepId={selectedStep?.id}
                 steps={activeTrip.steps}
                 onStepSelect={setSelectedStepId}
               />
-              <aside className="detail-card" aria-live="polite">
-                {selectedStep && (
+              {selectedStep && (
+                <aside className="detail-card" aria-live="polite">
                   <StepDetail
                     onEdit={isAdmin ? () => setEditTarget({ type: "step", stepId: selectedStep.id }) : undefined}
                     step={selectedStep}
                   />
-                )}
                 <div className="route-list" aria-label="Étapes du parcours">
                   {activeTrip.steps.map((step, index) => (
                     <button
@@ -304,7 +301,8 @@ export function App() {
                     </button>
                   ))}
                 </div>
-              </aside>
+                </aside>
+              )}
             </div>
           )}
         </section>
