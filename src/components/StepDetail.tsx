@@ -36,6 +36,23 @@ export function StepDetail({ onEdit, step }: { onEdit?: () => void; step: TripSt
           ))}
         </ul>
       </div>
+      {step.mapPoints && step.mapPoints.length > 0 && (
+        <div className="detail-section">
+          <h3>Inter-étapes sur la carte</h3>
+          <div className="map-point-list">
+            {step.mapPoints.map((point, index) => (
+              <div className="map-point-item" key={point.id}>
+                <span>{index + 1}</span>
+                <div>
+                  <strong>{point.label}</strong>
+                  <small>{point.date}</small>
+                  <p>{point.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {step.activities && step.activities.length > 0 && (
         <div className="detail-section">
           <h3>Activités week-end</h3>

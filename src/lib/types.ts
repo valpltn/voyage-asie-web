@@ -22,6 +22,14 @@ export interface ActivitySuggestion {
   coordinates?: [number, number];
 }
 
+export interface StepMapPoint {
+  id: string;
+  label: string;
+  date: string;
+  description: string;
+  coordinates: [number, number];
+}
+
 export interface TripStep {
   id: string;
   label: string;
@@ -36,6 +44,7 @@ export interface TripStep {
   transport: string;
   highlights: string[];
   dailyPlan: DailyPlanItem[];
+  mapPoints?: StepMapPoint[];
   activities?: ActivitySuggestion[];
 }
 

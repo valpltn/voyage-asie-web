@@ -22,6 +22,14 @@ const activitySuggestionSchema = z.object({
   coordinates: z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]).optional(),
 });
 
+const stepMapPointSchema = z.object({
+  id: z.string().regex(kebabId),
+  label: z.string().min(1),
+  date: z.string().min(1),
+  description: z.string().min(1),
+  coordinates: z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]),
+});
+
 const tripStepSchema = z.object({
   id: z.string().regex(kebabId),
   label: z.string().min(1),
@@ -36,6 +44,7 @@ const tripStepSchema = z.object({
   transport: z.string().min(1),
   highlights: z.array(z.string().min(1)),
   dailyPlan: z.array(dailyPlanItemSchema),
+  mapPoints: z.array(stepMapPointSchema).optional(),
   activities: z.array(activitySuggestionSchema).optional(),
 });
 

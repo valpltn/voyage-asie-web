@@ -49,10 +49,14 @@ export function TripMap({ isActive = true, steps, selectedStepId, onStepSelect }
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
+  const detailLineRef = useRef<L.Polyline | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const detailMarkersRef = useRef<L.Marker[]>([]);
   const initialCenter = steps[0]?.coordinates ?? ([0, 0] as [number, number]);
   const activeMapStyle = mapStyles.find((style) => style.id === mapStyleId) ?? mapStyles[0];
+  const selectedStep = selectedStepId ? steps.find((step) => step.id === selectedStepId) : undefined;
+  const selectedMapPoints = selectedStep?.mapPoints ?? [];
 
   const routeBounds = useMemo(() => {
     if (steps.length === 0) return undefined;
@@ -74,12 +78,20 @@ export function TripMap({ isActive = true, steps, selectedStepId, onStepSelect }
       dashArray: "9 10",
     }).addTo(mapRef.current);
 
+    detailLineRef.current = L.polyline([], {
+      color: travelColors.weekend,
+      weight: 4,
+      opacity: 0.9,
+    }).addTo(mapRef.current);
+
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
       routeLineRef.current = null;
+      detailLineRef.current = null;
       tileLayerRef.current = null;
       markersRef.current.clear();
+      detailMarkersRef.current = [];
     };
   }, []);
 
@@ -184,13 +196,55 @@ export function TripMap({ isActive = true, steps, selectedStepId, onStepSelect }
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !selectedStepId) return;
-    const step = steps.find((item) => item.id === selectedStepId);
-    if (!step) return;
+    const detailLine = detailLineRef.current;
+    if (!map || !detailLine) return;
 
-    map.flyTo(step.coordinates, step.id === "tainan" ? 8 : 9, { duration: 0.8 });
-    markersRef.current.get(step.id)?.openPopup();
-  }, [selectedStepId, steps]);
+    detailMarkersRef.current.forEach((marker) => marker.remove());
+    detailMarkersRef.current = [];
+    detailLine.setLatLngs([]);
+
+    if (!selectedStep) return;
+
+    markersRef.current.get(selectedStep.id)?.openPopup();
+
+    if (selectedMapPoints.length === 0) {
+      map.flyTo(selectedStep.coordinates, selectedStep.id === "tainan" ? 8 : 9, { duration: 0.8 });
+      return;
+    }
+
+    const detailCoordinates = [selectedStep.coordinates, ...selectedMapPoints.map((point) => point.coordinates)];
+    detailLine.setLatLngs(detailCoordinates);
+
+    selectedMapPoints.forEach((point, index) => {
+      const marker = L.marker(point.coordinates, {
+        icon: L.divIcon({
+          className: "",
+          html: `<div class="detail-marker">${index + 1}</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+          popupAnchor: [0, -12],
+        }),
+      }).addTo(map);
+
+      const popup = document.createElement("div");
+      const title = document.createElement("div");
+      const meta = document.createElement("div");
+      const description = document.createElement("div");
+      title.className = "popup-title";
+      title.textContent = point.label;
+      meta.className = "popup-meta";
+      meta.textContent = point.date;
+      description.textContent = point.description;
+      popup.append(title, meta, description);
+      marker.bindPopup(popup);
+      detailMarkersRef.current.push(marker);
+    });
+
+    const detailBounds = L.latLngBounds(detailCoordinates);
+    if (detailBounds.isValid()) {
+      map.flyToBounds(detailBounds, { duration: 0.8, maxZoom: 13, padding: [42, 42] });
+    }
+  }, [selectedMapPoints, selectedStep]);
 
   function fitRoute() {
     const map = mapRef.current;

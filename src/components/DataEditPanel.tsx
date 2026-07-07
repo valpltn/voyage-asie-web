@@ -53,6 +53,41 @@ function linesToDailyPlan(value: string) {
     });
 }
 
+function mapPointsToLines(value: TripStep["mapPoints"] = []) {
+  return value
+    .map((point) => `${point.date} | ${point.label} | ${point.description} | ${point.coordinates[0]}, ${point.coordinates[1]}`)
+    .join("\n");
+}
+
+function createPointId(label: string, index: number) {
+  const id = label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return id || `point-${index + 1}`;
+}
+
+function linesToMapPoints(value: string): NonNullable<TripStep["mapPoints"]> {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item, index) => {
+      const [date, label, description, coordinateText] = item.split("|").map((part) => part.trim());
+      const [latitudeText, longitudeText] = (coordinateText ?? "").split(",").map((part) => part.trim());
+      return {
+        id: createPointId(label || `point-${index + 1}`, index),
+        label: label || `Point ${index + 1}`,
+        date: date || "Jour",
+        description: description || "Lieu à préciser.",
+        coordinates: [roundCoordinate(Number(latitudeText)), roundCoordinate(Number(longitudeText))] as [number, number],
+      };
+    })
+    .filter((point) => Number.isFinite(point.coordinates[0]) && Number.isFinite(point.coordinates[1]));
+}
+
 function parseJsonArray<T>(value: string, label: string): T[] {
   const parsed = JSON.parse(value);
   if (!Array.isArray(parsed)) throw new Error(`${label} doit être un tableau JSON.`);
@@ -319,6 +354,7 @@ function createDefaultStep(tripId: string, startDate: string, endDate: string): 
     transport: "Transport à préciser.",
     highlights: ["Budget", "Logement", "Activités"],
     dailyPlan: [{ date: "Jour 1", summary: "Arrivée et première balade." }],
+    mapPoints: [],
   };
 }
 
@@ -542,6 +578,7 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
   const [draft, setDraft] = useState(step);
   const [highlights, setHighlights] = useState(arrayToLines(step.highlights));
   const [dailyPlan, setDailyPlan] = useState(dailyPlanToLines(step.dailyPlan));
+  const [mapPoints, setMapPoints] = useState(mapPointsToLines(step.mapPoints));
   const [addressQuery, setAddressQuery] = useState(step.label);
   const [geocodingMessage, setGeocodingMessage] = useState<string | null>(null);
   const [geocodingError, setGeocodingError] = useState<string | null>(null);
@@ -551,6 +588,7 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
     setDraft(step);
     setHighlights(arrayToLines(step.highlights));
     setDailyPlan(dailyPlanToLines(step.dailyPlan));
+    setMapPoints(mapPointsToLines(step.mapPoints));
     setAddressQuery(step.label);
     setGeocodingMessage(null);
     setGeocodingError(null);
@@ -582,7 +620,7 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
       className="editor-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit({ ...draft, dailyPlan: linesToDailyPlan(dailyPlan), highlights: linesToArray(highlights) });
+        onSubmit({ ...draft, dailyPlan: linesToDailyPlan(dailyPlan), highlights: linesToArray(highlights), mapPoints: linesToMapPoints(mapPoints) });
       }}
     >
       <label>Nom<input onChange={(event) => setDraft({ ...draft, label: event.target.value })} required value={draft.label} /></label>
@@ -643,6 +681,7 @@ function StepForm({ isSaving, onSubmit, step }: { isSaving: boolean; onSubmit: (
       <label>Transport<textarea onChange={(event) => setDraft({ ...draft, transport: event.target.value })} required value={draft.transport} /></label>
       <label>Temps forts<textarea onChange={(event) => setHighlights(event.target.value)} value={highlights} /></label>
       <label>Planning jour par jour<textarea onChange={(event) => setDailyPlan(event.target.value)} placeholder="Jour 1 | Arrivée et installation" value={dailyPlan} /></label>
+      <label>Inter-étapes carte<textarea onChange={(event) => setMapPoints(event.target.value)} placeholder="26 août | Dotonbori | Soirée street food | 34.6687, 135.501" value={mapPoints} /></label>
       <button className="primary-btn" disabled={isSaving} type="submit">Sauvegarder</button>
     </form>
   );
@@ -671,6 +710,7 @@ function normalizeStepForSave(step: TripStep): TripStep {
     transport: step.transport.trim() || "Transport à préciser.",
     highlights: step.highlights.map((highlight) => highlight.trim()).filter(Boolean),
     dailyPlan: step.dailyPlan.length > 0 ? step.dailyPlan : [{ date: "Jour 1", summary: "Planning à compléter." }],
+    mapPoints: step.mapPoints?.filter((point) => point.label.trim() && Number.isFinite(point.coordinates[0]) && Number.isFinite(point.coordinates[1])),
   };
 }
 
