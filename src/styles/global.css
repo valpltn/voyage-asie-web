@@ -128,22 +128,25 @@ h1 {
   animation: picker-enter 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   display: grid;
   gap: 14px;
-  margin: 0 0 18px;
+  margin: 0 calc(50% - 50vw) 18px;
   overflow: hidden;
-  padding: 0;
+  padding: 0 max(20px, calc((100vw - 1480px) / 2));
 }
 
 .picker-heading {
-  align-items: stretch;
-  display: grid;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  justify-items: center;
+  justify-content: center;
 }
 
 .folder-tabs {
-  display: grid;
+  display: flex;
+  flex-wrap: nowrap;
   gap: 8px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  justify-content: center;
 }
 
 .folder-tab {
@@ -154,10 +157,9 @@ h1 {
   cursor: pointer;
   font-weight: 800;
   line-height: 1.2;
-  min-height: 50px;
-  min-width: 0;
+  min-height: 62px;
+  min-width: min(31vw, 202px);
   padding: 12px 22px;
-  text-align: center;
   transition:
     background 160ms ease,
     color 160ms ease,
@@ -177,14 +179,22 @@ h1 {
 
 .destination-grid {
   align-items: start;
-  display: grid;
-  gap: 9px;
-  grid-template-columns: 1fr;
+  display: flex;
+  gap: 5px;
+  margin-inline: -2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
   padding: 2px 0 10px;
+  scroll-padding-inline: max(20px, calc((100vw - 1480px) / 2));
+  scroll-snap-type: x mandatory;
+  scrollbar-color: rgba(47, 143, 103, 0.34) transparent;
+  scrollbar-width: thin;
+  touch-action: pan-x;
 }
 
 .destination-grid::-webkit-scrollbar {
-  width: 8px;
+  height: 8px;
 }
 
 .destination-grid::-webkit-scrollbar-track {
@@ -197,28 +207,33 @@ h1 {
 }
 
 .destination-card {
+  --card-collapsed-width: clamp(125px, 10vw, 155px);
+  --card-expanded-width: clamp(195px, 19vw, 300px);
+  --card-width: var(--card-collapsed-width);
   animation: card-enter 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(min(var(--card-index, 0), 8) * 45ms);
   background: transparent;
   border: 0;
-  border-radius: 8px;
   color: var(--ink);
   cursor: pointer;
   display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
+  flex: 0 0 var(--card-width);
   gap: 8px;
-  min-width: 0;
-  padding: 8px;
+  padding: 0;
   position: relative;
+  scroll-snap-align: start;
   text-align: left;
+  transform-origin: left center;
   transition:
+    flex-basis 720ms cubic-bezier(0.22, 1, 0.36, 1) 120ms,
     opacity 260ms ease,
     transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: flex-basis;
 }
 
 .destination-card::before {
   content: "";
-  inset: -6px;
+  inset: -8px -16px -8px 0;
   position: absolute;
 }
 
@@ -258,12 +273,10 @@ h1 {
   --card-index: 8;
 }
 
-.destination-card.active,
+.destination-card.expanded,
 .destination-card:focus-visible {
-  background: rgba(255, 255, 255, 0.66);
-  box-shadow: 0 10px 22px rgba(29, 63, 48, 0.1);
-  outline: 1px solid rgba(31, 111, 79, 0.28);
-  transform: none;
+  --card-width: var(--card-expanded-width);
+  transform: translateY(-5px);
   transition-delay: 0ms;
 }
 
@@ -272,7 +285,7 @@ h1 {
   background-size: cover;
   border-radius: 7px;
   display: block;
-  height: 104px;
+  height: clamp(220px, 20vw, 285px);
   overflow: hidden;
   position: relative;
   transform-origin: left center;
@@ -290,21 +303,30 @@ h1 {
   position: absolute;
 }
 
-.destination-card.active .destination-photo,
+.destination-card.expanded .destination-photo,
 .destination-card:focus-visible .destination-photo {
   box-shadow: 0 16px 34px rgba(29, 63, 48, 0.18);
   filter: saturate(1.08) contrast(1.02);
 }
 
 .destination-content {
-  align-content: center;
   display: grid;
   gap: 3px;
-  min-width: 0;
-  padding: 0 6px;
+  padding: 0 8px;
   transition:
     opacity 360ms ease,
     transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.destination-card .destination-content span {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+.destination-card.expanded .destination-content span,
+.destination-card:focus-visible .destination-content span {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .destination-content strong {
@@ -1598,15 +1620,16 @@ h1 {
   }
 
   .destination-grid {
-    grid-template-columns: 1fr;
+    scroll-padding-inline: 20px;
   }
 
   .destination-card {
-    min-width: 0;
+    --card-collapsed-width: clamp(115px, 18vw, 155px);
+    --card-expanded-width: clamp(175px, 30vw, 255px);
   }
 
   .destination-photo {
-    height: 104px;
+    height: clamp(200px, 28vw, 260px);
   }
 
   .detail-card,
@@ -1711,16 +1734,16 @@ h1 {
   }
 
   .picker-heading {
-    grid-template-columns: 1fr;
     justify-items: stretch;
   }
 
   .destination-picker {
-    margin: 0 0 14px;
-    padding-inline: 0;
+    margin: 0 -10px 14px;
+    padding-inline: 10px;
   }
 
   .folder-tabs {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
@@ -1733,9 +1756,24 @@ h1 {
   }
 
   .destination-card {
+    --card-width: auto;
+    background: transparent;
+    border-radius: 8px;
+    flex: initial;
     grid-template-columns: 104px minmax(0, 1fr);
     gap: 7px;
+    min-width: 0;
     padding: 7px;
+    scroll-snap-align: none;
+    transform: none;
+    will-change: auto;
+  }
+
+  .destination-card.active,
+  .destination-card:focus-visible {
+    background: rgba(255, 255, 255, 0.66);
+    box-shadow: 0 10px 22px rgba(29, 63, 48, 0.1);
+    outline: 1px solid rgba(31, 111, 79, 0.28);
     transform: none;
   }
 
@@ -1744,12 +1782,23 @@ h1 {
   }
 
   .destination-grid {
+    display: grid;
+    gap: 9px;
+    grid-template-columns: 1fr;
+    margin-inline: 0;
     max-height: calc((92px + 15px) * 4);
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 4px;
+    scroll-snap-type: none;
     scrollbar-color: rgba(47, 143, 103, 0.34) transparent;
     scrollbar-width: thin;
+    touch-action: pan-y;
+  }
+
+  .destination-grid::-webkit-scrollbar {
+    width: 8px;
   }
 
   .destination-content {

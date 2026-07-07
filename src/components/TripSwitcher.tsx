@@ -1,3 +1,5 @@
+import { useRef, useState } from "react";
+import type { PointerEvent, WheelEvent } from "react";
 import { Settings } from "lucide-react";
 import type { TravelFolder } from "../lib/types";
 import { formatDateRange } from "../lib/format";
@@ -20,6 +22,9 @@ export function TripSwitcher({
   onTripChange,
 }: TripSwitcherProps) {
   const activeFolder = folders.find((folder) => folder.id === activeFolderId) ?? folders[0];
+  const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const switchTimer = useRef<number | undefined>(undefined);
   const tripImages: Record<string, string> = {
     "sud-chine-tainan-2026":
       "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=900&q=80",
@@ -54,6 +59,41 @@ export function TripSwitcher({
   const fallbackImage =
     "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=900&q=80";
 
+  function handleCarouselWheel(event: WheelEvent<HTMLDivElement>) {
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    event.currentTarget.scrollLeft += event.deltaY;
+    event.preventDefault();
+  }
+
+  function clearHoverTimers() {
+    window.clearTimeout(closeTimer.current);
+    window.clearTimeout(switchTimer.current);
+  }
+
+  function handleCardPointerEnter(tripId: string) {
+    window.clearTimeout(closeTimer.current);
+    window.clearTimeout(switchTimer.current);
+
+    if (!expandedTripId || expandedTripId === tripId) {
+      setExpandedTripId(tripId);
+      return;
+    }
+
+    switchTimer.current = window.setTimeout(() => {
+      setExpandedTripId(tripId);
+    }, 220);
+  }
+
+  function handleCardPointerLeave(event: PointerEvent<HTMLButtonElement>) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
+
+    window.clearTimeout(switchTimer.current);
+    closeTimer.current = window.setTimeout(() => {
+      setExpandedTripId(null);
+    }, 320);
+  }
+
   return (
     <section className="destination-picker" aria-label="Selection du voyage">
       <div className="picker-heading">
@@ -79,15 +119,24 @@ export function TripSwitcher({
         )}
       </div>
 
-      <div className="destination-grid">
+      <div className="destination-grid" onWheel={handleCarouselWheel}>
         {activeFolder.trips.map((trip) => {
           const imageUrl = trip.imageUrl ?? tripImages[trip.id] ?? fallbackImage;
           return (
             <button
               aria-pressed={trip.id === activeTripId}
-              className={`destination-card ${trip.id === activeTripId ? "active" : ""}`}
+              className={`destination-card ${trip.id === activeTripId ? "active" : ""} ${
+                trip.id === expandedTripId ? "expanded" : ""
+              }`}
               key={trip.id}
               onClick={() => onTripChange(trip.id)}
+              onFocus={() => handleCardPointerEnter(trip.id)}
+              onPointerEnter={() => handleCardPointerEnter(trip.id)}
+              onPointerLeave={handleCardPointerLeave}
+              onBlur={() => {
+                clearHoverTimers();
+                setExpandedTripId(null);
+              }}
               type="button"
             >
               <span
