@@ -79,17 +79,6 @@ export function TripSwitcher({
         )}
       </div>
 
-      <label className="mobile-trip-picker">
-        Voyage
-        <select onChange={(event) => onTripChange(event.target.value)} value={activeTripId}>
-          {activeFolder.trips.map((trip) => (
-            <option key={trip.id} value={trip.id}>
-              {trip.title} - {formatDateRange(trip.startDate, trip.endDate)}
-            </option>
-          ))}
-        </select>
-      </label>
-
       <div className="destination-grid">
         {activeFolder.trips.map((trip) => {
           const imageUrl = trip.imageUrl ?? tripImages[trip.id] ?? fallbackImage;

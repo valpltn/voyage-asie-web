@@ -128,25 +128,22 @@ h1 {
   animation: picker-enter 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   display: grid;
   gap: 14px;
-  margin: 0 calc(50% - 50vw) 18px;
+  margin: 0 0 18px;
   overflow: hidden;
-  padding: 0 max(20px, calc((100vw - 1480px) / 2));
+  padding: 0;
 }
 
 .picker-heading {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
+  align-items: stretch;
+  display: grid;
   gap: 10px;
-  justify-items: center;
-  justify-content: center;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .folder-tabs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
-  justify-content: center;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .folder-tab {
@@ -157,9 +154,10 @@ h1 {
   cursor: pointer;
   font-weight: 800;
   line-height: 1.2;
-  min-height: 62px;
-  min-width: min(31vw, 202px);
+  min-height: 50px;
+  min-width: 0;
   padding: 12px 22px;
+  text-align: center;
   transition:
     background 160ms ease,
     color 160ms ease,
@@ -177,15 +175,11 @@ h1 {
   color: #111b16;
 }
 
-.mobile-trip-picker {
-  display: none;
-}
-
 .destination-grid {
   align-items: start;
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 9px;
+  grid-template-columns: 1fr;
   padding: 2px 0 10px;
 }
 
@@ -194,12 +188,14 @@ h1 {
   animation-delay: calc(min(var(--card-index, 0), 8) * 45ms);
   background: transparent;
   border: 0;
+  border-radius: 8px;
   color: var(--ink);
   cursor: pointer;
   display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
   gap: 8px;
   min-width: 0;
-  padding: 0;
+  padding: 8px;
   position: relative;
   text-align: left;
   transition:
@@ -251,7 +247,10 @@ h1 {
 
 .destination-card.active,
 .destination-card:focus-visible {
-  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 10px 22px rgba(29, 63, 48, 0.1);
+  outline: 1px solid rgba(31, 111, 79, 0.28);
+  transform: none;
   transition-delay: 0ms;
 }
 
@@ -260,7 +259,7 @@ h1 {
   background-size: cover;
   border-radius: 7px;
   display: block;
-  height: clamp(220px, 20vw, 285px);
+  height: 104px;
   overflow: hidden;
   position: relative;
   transform-origin: left center;
@@ -285,9 +284,11 @@ h1 {
 }
 
 .destination-content {
+  align-content: center;
   display: grid;
   gap: 3px;
-  padding: 0 8px;
+  min-width: 0;
+  padding: 0 6px;
   transition:
     opacity 360ms ease,
     transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -1580,7 +1581,7 @@ h1 {
   }
 
   .destination-grid {
-    grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .destination-card {
@@ -1588,7 +1589,7 @@ h1 {
   }
 
   .destination-photo {
-    height: clamp(200px, 28vw, 260px);
+    height: 104px;
   }
 
   .detail-card,
@@ -1693,73 +1694,36 @@ h1 {
   }
 
   .picker-heading {
+    grid-template-columns: 1fr;
     justify-items: stretch;
   }
 
   .destination-picker {
-    margin: 0 -10px 14px;
-    padding-inline: 10px;
+    margin: 0 0 14px;
+    padding-inline: 0;
   }
 
   .folder-tabs {
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    scrollbar-width: none;
-  }
-
-  .folder-tabs::-webkit-scrollbar,
-  .tabs::-webkit-scrollbar {
-    display: none;
+    grid-template-columns: 1fr;
   }
 
   .folder-tab {
-    flex: 0 0 auto;
     min-height: 48px;
-    min-width: min(72vw, 240px);
+    min-width: 0;
     padding: 10px 14px;
     text-align: center;
-  }
-
-  .destination-card {
-    gap: 7px;
-    transform: none;
-  }
-
-  .mobile-trip-picker {
-    color: var(--muted);
-    display: grid;
-    gap: 6px;
-    font-size: 0.74rem;
-    font-weight: 850;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .mobile-trip-picker select {
-    appearance: none;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background:
-      linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 18px) 55% / 7px 7px no-repeat,
-      linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 13px) 55% / 7px 7px no-repeat,
-      rgba(251, 255, 248, 0.94);
-    color: var(--ink);
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 800;
-    min-height: 48px;
-    padding: 10px 40px 10px 12px;
-    text-transform: none;
     width: 100%;
   }
 
-  .destination-grid {
-    display: none;
+  .destination-card {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 7px;
+    padding: 7px;
+    transform: none;
   }
 
   .destination-photo {
-    height: clamp(170px, 58vw, 240px);
+    height: 92px;
   }
 
   .destination-content {
@@ -1989,13 +1953,12 @@ h1 {
     font-size: clamp(1.85rem, 12vw, 2.65rem);
   }
 
-  .destination-picker,
   .tabs {
     margin-inline: -8px;
   }
 
   .destination-picker {
-    padding-inline: 8px;
+    padding-inline: 0;
   }
 
   .tabs {
@@ -2031,6 +1994,6 @@ h1 {
   }
 
   .destination-photo {
-    height: min(42vw, 180px);
+    height: 84px;
   }
 }
