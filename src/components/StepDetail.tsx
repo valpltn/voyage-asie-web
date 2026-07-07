@@ -38,7 +38,7 @@ export function StepDetail({ onEdit, step }: { onEdit?: () => void; step: TripSt
       </div>
       {step.activities && step.activities.length > 0 && (
         <div className="detail-section">
-          <h3>Activites weekend</h3>
+          <h3>Activités week-end</h3>
           <div className="activity-list">
             {step.activities.map((activity) => (
               <a className="activity-item" href={activity.sourceUrl} key={activity.title} rel="noreferrer" target="_blank">

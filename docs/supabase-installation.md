@@ -37,5 +37,5 @@ Connecte-toi dans le site, ouvre le panneau `Modifier`, puis sauvegarde les voya
 
 - Lecture publique : dossiers et voyages avec `is_public = true`.
 - Lecture privee : dépenses seulement pour le proprietaire connecte.
-- Ecriture : uniquement si `auth.uid()` correspond a `owner_id`.
+- Écriture : uniquement si `auth.uid()` correspond à `owner_id`.
 - Les documents prives ne doivent pas être references par un voyage public.

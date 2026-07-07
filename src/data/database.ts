@@ -137,7 +137,7 @@ export const coreTravelFolders: TravelFolder[] = [
           { id: "hong-kong-hangzhou-nanjing", tripId: "sud-chine-tainan-2026", category: "Transports Chine", label: "Trajet Hong Kong -> Hangzhou ou Nanjing le 23 août après-midi.", priority: "medium", status: "todo", dueDate: "2026-08-23" },
           { id: "hangzhou-nanjing-shanghai", tripId: "sud-chine-tainan-2026", category: "Transports Chine", label: "Trajet Hangzhou ou Nanjing -> Shanghai le 25 au soir ou le 26 matin.", priority: "medium", status: "todo", dueDate: "2026-08-25" },
           { id: "vol-shanghai-tokyo", tripId: "sud-chine-tainan-2026", category: "Vols", label: "Vol Shanghai -> Tokyo le 25 au soir ou le 26 matin.", priority: "high", status: "todo", dueDate: "2026-08-26" },
-          { id: "documents-entree", tripId: "sud-chine-tainan-2026", category: "Documents", label: "Conditions d'entrée Chine et Taiwan confirmées.", priority: "high", status: "todo" },
+          { id: "documents-entree", tripId: "sud-chine-tainan-2026", category: "Documents", label: "Conditions d'entrée Chine et Taïwan confirmées.", priority: "high", status: "todo" },
         ],
         documents: [
           { id: "itineraire-detaille", title: "Itinéraire détaillé", type: "itinerary", path: "/docs/itineraire-sud-chine-tainan-2026.md", tripId: "sud-chine-tainan-2026", visibility: "public" },
@@ -344,7 +344,7 @@ export const weekendSeeds: WeekendSeed[] = [
     coordinates: [-6.2088, 106.8456],
   },
   {
-    country: "Taiwan",
+    country: "Taïwan",
     city: "Kinmen",
     departureAirport: "Tainan",
     startDate: "2026-09-09",

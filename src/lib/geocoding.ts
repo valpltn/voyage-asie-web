@@ -41,7 +41,7 @@ function writeCache(cache: Record<string, GeocodingResult>) {
 
 export async function geocodeAddress(query: string): Promise<GeocodingResult> {
   const normalizedQuery = normalizeQuery(query);
-  if (!normalizedQuery) throw new Error("Indique une adresse ou un lieu a rechercher.");
+  if (!normalizedQuery) throw new Error("Indique une adresse ou un lieu à rechercher.");
 
   const cache = readCache();
   const cachedResult = cache[normalizedQuery];
@@ -76,7 +76,7 @@ export async function geocodeAddress(query: string): Promise<GeocodingResult> {
   };
   const result = data.results?.[0];
   if (typeof result?.lat !== "number" || typeof result.lon !== "number") {
-    throw new Error("Aucun résultat trouve pour cette adresse.");
+    throw new Error("Aucun résultat trouvé pour cette adresse.");
   }
 
   const geocodingResult: GeocodingResult = {

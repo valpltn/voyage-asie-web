@@ -25,9 +25,9 @@ export function priorityLabel(priority: string) {
 
 export function statusLabel(status: string) {
   const labels: Record<string, string> = {
-    todo: "A faire",
-    booked: "Reserve",
-    skipped: "Ignore",
+    todo: "À faire",
+    booked: "Réservé",
+    skipped: "Ignoré",
   };
 
   return labels[status] ?? status;
